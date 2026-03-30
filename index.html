@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>Charlotte Aviation | PPL Training Tracker</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+
+<!--
+  Charlotte Aviation PPL Tracker
+  index.html  — Shell only. No inline logic or styles.
+  styles.css  — All rules including dark-theme overrides.
+  app.js      — ES6 module. All logic, views, feature functions.
+  syllabus-data.js — Ground (GL) and Flight (FL) syllabus objects.
+
+  New feature hooks (v2):
+    Dark mode : toggleDarkMode()    ← #darkModeBtn in topbar
+    Mobile nav: toggleMobileNav()   ← #hamburgerBtn in topbar (<=700px)
+    Weather   : fetchKJQFWeather()  ← inside Weather Brief view
+    Sync wind : syncWindToXWCalc()  ← inside Weather Brief view
+    W&B calc  : calcWB()            ← inside Weight & Balance view
+-->
+
+<body>
+
+<!-- ── MOBILE SIDEBAR OVERLAY ──────────────────────────────────────────
+     Full-screen backdrop shown behind the slide-out sidebar on mobile.
+     Clicking it calls closeMobileNav() to dismiss the sidebar.       -->
+<div id="sidebarOverlay" data-click-action="close-mobile-nav"></div>
+
+
+<!-- ── SIDEBAR ─────────────────────────────────────────────────────────
+     On desktop: always visible, fixed width.
+     On mobile (<=700px): slides in/out via .open class + CSS transform. -->
+<div id="sidebar">
+
+  <div class="logo">
+    <div class="logo-mark">CHARLOTTE AVIATION</div>
+    <div class="logo-sub">PPL Training Tracker</div>
+  </div>
+
+  <div class="stu-wrap">
+    <label>Active Student</label>
+    <select id="stuSel" data-change-action="select-student">
+      <option value="">— Select Student —</option>
+    </select>
+    <button class="btn-new-stu" data-click-action="show-add-student">+ New Student</button>
+  </div>
+
+  <nav class="nav">
+    <!-- v3: Quick-search for ACS tasks and lessons -->
+    <div class="sidebar-search-wrap">
+      <input id="sidebarSearch"
+             type="search"
+             placeholder="Search lessons, ACS…"
+             autocomplete="off"
+             data-input-action="quick-search"
+             data-blur-action="search-blur"
+             data-focus-action="quick-search">
+      <div id="searchResults"></div>
+    </div>
+
+    <div class="nav-sec">Overview</div>
+    <div class="nav-item active" data-view="dashboard" data-click-action="nav">
+      <span class="nav-icon">◈</span><span>Dashboard</span>
+    </div>
+    <div class="nav-item" data-view="students" data-click-action="nav">
+      <span class="nav-icon">◉</span><span>Students</span>
+    </div>
+
+    <div class="nav-sec">Training</div>
+    <div class="nav-item" data-view="lessons" data-click-action="nav-lessons">
+      <span class="nav-icon">◧</span><span>Lessons</span>
+    </div>
+    <div class="nav-item" data-view="requirements" data-click-action="nav">
+      <span class="nav-icon">§</span><span>§ 61.109 Reqs</span>
+    </div>
+    <div class="nav-item" data-view="proficiency" data-click-action="nav">
+      <span class="nav-icon">🔥</span><span>Proficiency Map</span>
+    </div>
+
+    <div class="nav-item" data-view="procedures" data-click-action="nav">
+      <span class="nav-icon">≡</span><span>Aircraft Procedures</span>
+    </div>
+
+    <div class="nav-item" data-view="poh" data-click-action="nav">
+      <span class="nav-icon">POH</span><span>POH Reference</span>
+    </div>
+
+    <div class="nav-sec">Tools</div>
+    <div class="nav-item" data-view="5p" data-click-action="nav">
+      <span class="nav-icon">✈</span><span>5P Pre-Flight</span>
+    </div>
+    <div class="nav-item" data-view="e6b" data-click-action="nav">
+      <span class="nav-icon">✦</span><span>E6-B Computer</span>
+    </div>
+    <div class="nav-item" data-view="xwind" data-click-action="nav">
+      <span class="nav-icon">⇌</span><span>Crosswind Calc</span>
+    </div>
+    <div class="nav-item" data-view="wx" data-click-action="nav">
+      <span class="nav-icon">☁</span><span>Weather Brief</span>
+    </div>
+    <!-- NEW v2: Weight & Balance calculator -->
+    <div class="nav-item" data-view="wb" data-click-action="nav">
+      <span class="nav-icon">⚖</span><span>Weight &amp; Balance</span>
+    </div>
+
+    <div class="nav-item" data-view="performance" data-click-action="nav">
+      <span class="nav-icon">PF</span><span>Performance</span>
+    </div>
+    <div class="nav-item" data-view="decision" data-click-action="nav">
+      <span class="nav-icon">&#9888;</span><span>Preflight Decision</span>
+    </div>
+
+    <div class="nav-sec">Output</div>
+    <div class="nav-item" data-view="reports" data-click-action="nav">
+      <span class="nav-icon">◫</span><span>Reports</span>
+    </div>
+    <div class="nav-item" data-view="settings" data-click-action="nav">
+      <span class="nav-icon">⚙</span><span>CFI Settings</span>
+    </div>
+
+  </nav>
+
+  <div class="sidebar-foot">Charlotte Aviation · KJQF · Part 61</div>
+
+  <div class="sidebar-io">
+    <button class="btn-io" data-click-action="export-data"
+            title="Download all student data as JSON backup">⬇ Export</button>
+    <label  class="btn-io" title="Restore from JSON backup file">
+      ⬆ Import
+      <input id="importFileInput" type="file" accept=".json" style="display:none"
+             data-change-action="import-data">
+    </label>
+  </div>
+
+</div><!-- /#sidebar -->
+
+
+<!-- ── MAIN ────────────────────────────────────────────────────────────-->
+<div id="main">
+
+  <div class="topbar">
+
+    <!-- NEW v2: Hamburger button — hidden on desktop, shown on <=700px via CSS -->
+    <button id="hamburgerBtn"
+            class="btn btn-ghost btn-sm topbar-hamburger"
+            data-click-action="toggle-mobile-nav"
+            aria-label="Toggle navigation">☰</button>
+
+    <div class="topbar-title" id="topTitle">DASHBOARD</div>
+    <div class="topbar-crumb" id="topCrumb">Charlotte Aviation PPL</div>
+
+    <!-- Per-view action buttons injected here by App.render() -->
+    <div id="topActions" style="display:flex;gap:6px;align-items:center"></div>
+
+    <div class="mode-switch" id="modeSwitch" aria-label="App mode">
+      <span class="mode-switch-label">Mode:</span>
+      <div class="mode-switch-group" role="group" aria-label="Instructor or Student mode">
+        <button id="modeInstructorBtn"
+                class="btn btn-ghost btn-sm mode-switch-btn active"
+                data-click-action="set-mode"
+                data-mode="instructor">Instructor</button>
+        <button id="modeStudentBtn"
+                class="btn btn-ghost btn-sm mode-switch-btn"
+                data-click-action="set-mode"
+                data-mode="student">Student</button>
+      </div>
+      <span class="mode-indicator" id="modeIndicator" hidden>Student Mode Active</span>
+    </div>
+
+    <!-- NEW v2: Dark mode toggle — always visible in topbar -->
+      <button id="darkModeBtn"
+              class="btn btn-ghost btn-sm topbar-darkmode"
+              data-click-action="toggle-dark-mode"
+              title="Toggle dark / light mode"
+              aria-label="Toggle dark mode">◑</button>
+
+    </div>
+
+  <!-- All view content rendered here by App.render() / V.* functions -->
+  <div class="content" id="content"></div>
+
+</div><!-- /#main -->
+
+
+<!-- Modal layer — App.showAddStudent() etc. inject here -->
+<div id="modals"></div>
+
+
+<!-- ES6 module entry point.
+     type="module" scopes all JS; app.js binds UI events after load. -->
+<script type="module" src="app.js"></script>
+
+</body>
+</html>
