@@ -29,7 +29,8 @@ import {
 // â”€â”€â”€ STORE KEYS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const STORE     = 'charlotteaviation_v1'; // â† bump version here on schema changes
 const CFI_STORE = 'charlotteaviation_cfi';
-const DARK_STORE= 'charlotteaviation_darkmode';
+const DARK_STORE     = 'charlotteaviation_darkmode';
+const COLLAPSE_STORE = 'charlotteaviation_sidebar_collapsed';
 
 // â”€â”€â”€ CFI PROFILE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 let cfiProfile = (()=>{
@@ -186,6 +187,53 @@ function initDarkMode() {
   } catch(e){}
 }
 
+// ─── PRE-SOLO KNOWLEDGE TEST ────────────────────────────────────────────────
+const PRESOLO_SOURCE_LESSONS = ['GL1','GL2','GL3','GL4','GL5','GL6'];
+const PRESOLO_PASS_PCT = 80;
+
+function buildPresoloQuestions() {
+  const questions = [];
+  for(const lid of PRESOLO_SOURCE_LESSONS) {
+    const lesson = GL[lid];
+    if(!lesson || !lesson.debrief) continue;
+    for(const q of lesson.debrief) {
+      questions.push({ q, lessonId: lid, lessonTitle: lesson.title, pass: null });
+    }
+  }
+  for(let i=questions.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    [questions[i],questions[j]]=[questions[j],questions[i]];
+  }
+  return questions;
+}
+
+// ─── SIDEBAR COLLAPSE ────────────────────────────────────────────────────────
+function toggleSidebarCollapse() {
+  const collapsed = document.body.classList.toggle('sidebar-collapsed');
+  try { localStorage.setItem(COLLAPSE_STORE, collapsed ? '1' : '0'); } catch(e){}
+  const btn = document.querySelector('.sidebar-collapse-btn');
+  if(btn) btn.innerHTML = collapsed ? '&#8250;' : '&#8249;';
+}
+
+function toggleNavGroup(group) {
+  const el = document.querySelector(`.nav-group[data-group="${group}"]`);
+  if (!el) return;
+  const isOpen = el.classList.toggle('nav-group--open');
+  try { localStorage.setItem('charlotteaviation_navgroup_' + group, isOpen ? '1' : '0'); } catch(e) {}
+}
+
+function initSidebarCollapse() {
+  try {
+    const stored = localStorage.getItem(COLLAPSE_STORE);
+    const shouldCollapse = stored === null || stored === '1';
+    if (shouldCollapse) {
+      document.body.classList.add('sidebar-collapsed');
+      const btn = document.querySelector('.sidebar-collapse-btn');
+      if (btn) btn.innerHTML = '&#8250;';
+    }
+  } catch(e) {}
+}
+
 // â”€â”€â”€ MOBILE NAV â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 /**
  * toggleMobileNav() â€” driven by a hamburger button you place in the
@@ -225,7 +273,7 @@ function closeMobileNav() {
 
 // Close mobile nav automatically whenever the user picks a nav item
 function navLessons()          { closeMobileNav(); App.nav('lessons'); }
-function nav5PSession(key)     { closeMobileNav(); App.nav('5p'); }
+function nav5PSession(key)     { closeMobileNav(); curToolsTab='5p'; App.nav('tools'); }
 
 // â”€â”€â”€ SIDEBAR QUICK-SEARCH â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 /**
@@ -313,7 +361,13 @@ function handleClickAction(el, event) {
       case 'set-mode': App.setMode(el.dataset.mode); break;
       case 'show-add-student': App.showAddStudent(); break;
     case 'quick-search-go': quickSearchGo(el.dataset.lid); break;
-    case 'nav': App.nav(el.dataset.view); break;
+    case 'nav': {
+      const TOOL_VIEWS = new Set(['xwind','wx','wb','performance','decision','5p']);
+      const v = el.dataset.view;
+      if(TOOL_VIEWS.has(v)){ curToolsTab=v; App.nav('tools'); }
+      else App.nav(v);
+      break;
+    }
     case 'nav-lessons': navLessons(); break;
     case 'open-lesson': App.openLesson(el.dataset.lid); break;
     case 'open-procedure': App.openProcedure(el.dataset.pid); break;
@@ -342,7 +396,8 @@ function handleClickAction(el, event) {
       App.toggleWI(el.dataset.lid, Number(el.dataset.idx));
       break;
     case 'save-note': App.saveNote(el.dataset.lid); break;
-    case 'sign-off': App.signOff(el.dataset.lid); break;
+    case 'sign-off': App.showSignOffModal(el.dataset.lid); break;
+    case 'confirm-sign-off': App.confirmSignOff(el.dataset.lid); break;
     case 'print': window.print(); break;
     case 'copy-endorsement': App.copyEndorsement(el.dataset.reqId); break;
     case 'copy-homework-summary': App.copyHomeworkSummary(el.dataset.lid); break;
@@ -351,13 +406,14 @@ function handleClickAction(el, event) {
     case 'add-student': App.addStudent(); break;
     case 'save-edit-student': App.saveEditStudent(el.dataset.studentId); break;
     case 'export-data': App.exportData(); break;
+    case 'dismiss-backup-prompt': { const b=document.getElementById('backupPromptBanner'); if(b) b.style.display='none'; break; }
     case 'nav-5p-session': App.nav5PSession(el.dataset.sessionKey); break;
     case 'set-srm-item': App.setSRMItem(el.dataset.lid, el.dataset.itemKey, el.dataset.value); break;
     case 'set-srm-standalone': App.setSRMStandalone(el.dataset.sessionKey, el.dataset.itemKey, el.dataset.value); break;
     case 'clear-srm-standalone':
       if(confirm('Clear all items for today?')) App.clearSRMStandalone(el.dataset.sessionKey);
       break;
-    case 'e6b-tab': e6bTab(el.dataset.panel, el); break;
+    case 'wb-toggle-fuel-unit': wbToggleFuelUnit(); break;
     case 'xw-set-rwy': xwSetRwy(Number(el.dataset.heading)); break;
     case 'fetch-weather': fetchKJQFWeather(); break;
     case 'sync-wind-xw': syncWindToXWCalc(); break;
@@ -369,6 +425,21 @@ function handleClickAction(el, event) {
       case 'download-homework-file': App.downloadHomeworkFile(el.dataset.lid); break;
       case 'toggle-mobile-nav': toggleMobileNav(); break;
       case 'toggle-dark-mode': toggleDarkMode(); break;
+      case 'toggle-sidebar-collapse': toggleSidebarCollapse(); break;
+      case 'toggle-nav-group': toggleNavGroup(el.dataset.group); break;
+      case 'start-presolo-test': curPresoloTest=buildPresoloQuestions(); console.log('[presolo] test started, questions:',curPresoloTest.length); App.render(); document.getElementById('content')?.scrollTo(0,0); break;
+      case 'cancel-presolo-test': curPresoloTest=null; App.render(); break;
+      case 'mark-presolo-q': {
+        const idx=parseInt(el.dataset.idx,10);
+        const val=el.dataset.val==='pass';
+        if(curPresoloTest) curPresoloTest[idx].pass=curPresoloTest[idx].pass===val?null:val;
+        App.render(); break;
+      }
+      case 'submit-presolo-test': App.submitPresoloTest(); break;
+      case 'tools-tab':
+        curToolsTab = el.dataset.tab;
+        App.render();
+        break;
     }
   }
 
@@ -394,10 +465,6 @@ function handleInputAction(el) {
     case 'filter-poh': App.setPohSearch(el.value); break;
     case 'update-req': App.updateReq(el.dataset.reqId); break;
     case 'save-personal-mins': App.savePersonalMins(); break;
-    case 'e6b-tsd': e6bTSD(); break;
-    case 'e6b-fuel': e6bFuel(); break;
-    case 'e6b-tas': e6bTAS(); break;
-    case 'e6b-wca': e6bWCA(); break;
     case 'xw-calc': xwCalc(); break;
     case 'calc-wb': calcWB(); break;
     case 'calc-performance': calcPerformance(); break;
@@ -1943,11 +2010,13 @@ function lessonTypeLabel(lesson) {
 
 // â”€â”€â”€ APP â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 let curView='dashboard',curLesson=null,curTab='tasks',curHomeworkView='print',expandedTasks={},curPhase='presolo',curProcedureCategory='all',curProcedureSearch='',curProcedureId=null,curPohCategory='all',curPohSearch='',curPohId=null,appMode='instructor';
+let curToolsTab='xwind';
+let curPresoloTest=null;
 let isApplyingRoute = false;
-const VIEWS={dashboard:'DASHBOARD',students:'STUDENTS',lessons:'LESSONS',requirements:'SEC. 61.109 REQUIREMENTS',reports:'REPORTS',settings:'SETTINGS','5p':'5P PRE-FLIGHT CHECK',e6b:'E6-B FLIGHT COMPUTER',xwind:'CROSSWIND CALCULATOR',wx:'WEATHER QUICK-BRIEF',wb:'WEIGHT & BALANCE',performance:'PERFORMANCE',decision:'PREFLIGHT DECISION',lesson:'LESSON',proficiency:'ACS PROFICIENCY HEATMAP',procedures:'AIRCRAFT PROCEDURES',poh:'POH REFERENCE'};
-const VALID_LESSON_TABS = new Set(['tasks','objectives','scenario','instructor','srm','debrief','homework','stagecheck']);
+const VIEWS={dashboard:'DASHBOARD',students:'STUDENTS',lessons:'LESSONS',requirements:'SEC. 61.109 REQUIREMENTS',reports:'REPORTS',settings:'SETTINGS',tools:'PILOT TOOLS',presolo:'PRE-SOLO KNOWLEDGE TEST',lesson:'LESSON',proficiency:'ACS PROFICIENCY HEATMAP',procedures:'AIRCRAFT PROCEDURES',poh:'POH REFERENCE'};
+const VALID_LESSON_TABS = new Set(['tasks','objectives','scenario','instructor','srm','debrief','homework','stagecheck','plan','fly']);
 const VALID_PHASES = new Set(PHASES.map(p => p.id));
-const STUDENT_ALLOWED_VIEWS = new Set(['dashboard','lessons','lesson','procedures','poh','performance']);
+const STUDENT_ALLOWED_VIEWS = new Set(['dashboard','lessons','lesson','procedures','poh','tools']);
 const STUDENT_ALLOWED_TABS = new Set(['homework','objectives','scenario']);
 
 function isStudentMode() {
@@ -2063,6 +2132,7 @@ const App={
     bindEventActions();
     bindRouting();
     initDarkMode();
+    initSidebarCollapse();
     applyAppModeUi();
     this.renderStuSel();
     if(window.location.search){
@@ -2176,22 +2246,14 @@ const App={
       case 'requirements': el.innerHTML=V.requirements(s);break;
       case 'reports':      el.innerHTML=V.reports(s);break;
       case 'settings':     el.innerHTML=V.settings();break;
-      case '5p':           el.innerHTML=V.fiveP(s);break;
-      case 'e6b':          el.innerHTML=V.e6b();break;
-      case 'xwind':        el.innerHTML=V.xwind();break;
-      case 'wx':           el.innerHTML=V.wx(s);
-        // Auto-fetch live METAR as soon as the card is in the DOM
-        setTimeout(()=>{ if(typeof fetchKJQFWeather==='function') fetchKJQFWeather(); },80);
+      case 'tools':        el.innerHTML=V.tools(s,curToolsTab);
+        if(curToolsTab==='wx') setTimeout(()=>{ if(typeof fetchKJQFWeather==='function') fetchKJQFWeather(); },80);
+        if(curToolsTab==='wb') setTimeout(()=>{ if(typeof calcWB==='function') calcWB(); },0);
+        if(curToolsTab==='performance') setTimeout(()=>{ if(typeof calcPerformance==='function') calcPerformance(); },0);
         break;
-      case 'wb':           el.innerHTML=V.weightBalance();
-        setTimeout(()=>{ if(typeof calcWB==='function') calcWB(); }, 0);
-        break;
-      case 'performance':  el.innerHTML=V.performance(s);
-        setTimeout(()=>{ if(typeof calcPerformance==='function') calcPerformance(); }, 0);
-        break;
-      case 'decision':     el.innerHTML=V.preflightDecision(s);break;
       case 'lesson':       el.innerHTML=V.lessonDetail(curLesson,s);
         ta.innerHTML=`<button class="btn btn-ghost btn-sm" data-click-action="nav-lessons">&larr; Back</button>`;break;
+      case 'presolo':      try{el.innerHTML=V.presolo(s);}catch(e){console.error('presolo render error',e);el.innerHTML=`<div class="alert alert-danger">Render error: ${e.message}</div>`;}break;
       case 'proficiency':  el.innerHTML=V.proficiency(s);break;
       case 'procedures':   el.innerHTML=V.procedures(s);break;
       case 'poh':          el.innerHTML=V.poh(s);break;
@@ -2336,7 +2398,13 @@ const App={
     if(options.updateRoute!==false)syncRoute(options.replaceRoute === true);
   },
   setTab(tab,options={}){
-    curTab=studentSafeLessonTab(tab);
+    const TAB_MIGRATION = {
+      tasks:'fly', objectives:'plan', scenario:'plan',
+      instructor:'plan', srm:'fly', homework:'debrief',
+      stagecheck:'debrief'
+    };
+    const resolved = TAB_MIGRATION[tab] || tab;
+    curTab = studentSafeLessonTab(resolved);
     document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.tab===curTab));
     const el=document.getElementById('tabContent');
     if(el)el.innerHTML=V.lessonTab(curLesson,getS(),curTab);
@@ -2487,10 +2555,34 @@ const App={
       setTimeout(()=>{btn.textContent=id==='save_btn'?'Save Debrief':'Save';},1500);
     });
   },
-  signOff(lid){
+  showSignOffModal(lid){
+    const lesson=GL[lid]||FL[lid];
+    const today=new Date().toISOString().split('T')[0];
+    document.getElementById('modals').innerHTML=`
+    <div class="modal-bg">
+      <div class="modal" style="max-width:360px">
+        <div class="modal-title">SIGN OFF LESSON</div>
+        <div style="font-size:13px;color:var(--text2);margin-bottom:14px">${lesson?lesson.id+' — '+lesson.title:lid}</div>
+        <div class="fg" style="margin-bottom:16px">
+          <label>Sign-Off Date</label>
+          <input class="finput" id="signOffDateInput" type="date" value="${today}" autofocus>
+          <div style="font-family:var(--ff-mono);font-size:10px;color:var(--text3);margin-top:4px">Defaults to today. Back-date if lesson was completed earlier.</div>
+        </div>
+        <div class="modal-actions">
+          <button class="btn btn-ghost" data-click-action="close-modals">Cancel</button>
+          <button class="btn btn-green" data-click-action="confirm-sign-off" data-lid="${lid}">&#10003; Confirm Sign-Off</button>
+        </div>
+      </div></div>`;
+  },
+  confirmSignOff(lid){
+    const dateVal=document.getElementById('signOffDateInput')?.value;
+    const ts=dateVal?new Date(dateVal+'T12:00:00').toISOString():new Date().toISOString();
+    document.getElementById('modals').innerHTML='';
     const s=getS();if(!s)return;
     const d=initSD(s);
     d.lessonStatus[lid]='signed_off';
+    if(!d.lessonSignOffDates)d.lessonSignOffDates={};
+    d.lessonSignOffDates[lid]=ts;
     const lesson=GL[lid]||FL[lid];
     if(lesson){
       if(!d.taskStatus[lid])d.taskStatus[lid]={};
@@ -2667,6 +2759,23 @@ const App={
     reader.readAsText(file);
     evt.target.value='';
   },
+  submitPresoloTest(){
+    const s=getS();
+    if(!s||!curPresoloTest) return;
+    const total=curPresoloTest.length;
+    const scored=curPresoloTest.filter(q=>q.pass!==null).length;
+    if(scored<total){ alert(`Please mark all ${total} questions before submitting.`); return; }
+    const passed_count=curPresoloTest.filter(q=>q.pass).length;
+    const pct=Math.round(passed_count/total*100);
+    const passed=pct>=PRESOLO_PASS_PCT;
+    const record={ date:new Date().toISOString().split('T')[0], score:passed_count, total, pct, passed };
+    if(!s.data.presoloTests) s.data.presoloTests=[];
+    s.data.presoloTests.unshift(record);
+    save();
+    curPresoloTest=null;
+    this.render();
+  },
+
   saveCFISettings(){
     cfiProfile.name=document.getElementById('cfi_name').value.trim();
     cfiProfile.certNum=document.getElementById('cfi_certnum').value.trim();
@@ -2820,137 +2929,93 @@ const V={
       ? '<div class="empty-actions"><button class="btn btn-primary" data-click-action="show-add-student">Create First Student</button></div>'
       : '<div class="empty-actions"><button class="btn btn-primary" data-click-action="nav" data-view="students">Select Student</button><button class="btn btn-ghost" data-click-action="show-add-student">Add Student</button></div>';
     if(!s)return H.emptyState('', 'NO STUDENT SELECTED', 'Select a student to review training progress, lessons, and readiness.', emptyActions);
-    const reqDone=REQS.filter(r=>getReq(s,r.id)>=r.min).length;
-    const unmetReqs=REQS.filter(r=>getReq(s,r.id)<r.min);
-    const recs=H.recommend(s);
-    const nextAction=H.nextTrainingAction(s);
-    const needsReview=H.needsReview(s);
-    const readiness=H.readinessSnapshot(s);
-    const procedureSupport=H.procedureSupport(s);
-    const combinedGuidance=H.combinedGuidanceBundles(s);
-    const milestones=[
-      {id:'FL11',name:'First Solo'},
-      {id:'FL12',name:'Stage 1 Check'},
-      {id:'FL19',name:'Night XC Dual'},
-      {id:'FL20',name:'Solo XC'},
-      {id:'FL25',name:'Stage 2 Check'},
-      {id:'FL26',name:'FAA Practical Test'}
-    ];
-    const nextMilestone = milestones.find(m=>getLStatus(s,m.id)!=='signed_off') || null;
+    const reqDone = REQS.filter(r=>getReq(s,r.id)>=r.min).length;
     const totalHrs=getReq(s,'total'), soloHrs=getReq(s,'solo'), dualHrs=getReq(s,'dual');
-    const totalPct=Math.min(100,(totalHrs/40)*100), soloPct=Math.min(100,(soloHrs/10)*100), dualPct=Math.min(100,(dualHrs/20)*100), reqPct=Math.round(reqDone/REQS.length*100);
+    const totalPct=Math.min(100,(totalHrs/40)*100);
+    const soloPct=Math.min(100,(soloHrs/10)*100);
+    const dualPct=Math.min(100,(dualHrs/20)*100);
+    const reqPct=Math.round(reqDone/REQS.length*100);
     const activePhase = H.activePhase(s);
-    const activePhaseIds = H.phaseLessonIds(activePhase);
-    const activePhaseDone = activePhaseIds.filter(lid=>getLStatus(s,lid)==='signed_off').length;
-    const statusCards = [
-      {label:'Current Phase', value:activePhase.title, sub:`${activePhaseDone}/${activePhaseIds.length} lessons signed off`, color:activePhase.color},
-      {label:'Needs Review', value:String(needsReview.length), sub:needsReview.length ? 'Additional practice recommended' : 'No lessons currently flagged', color:needsReview.length ? 'var(--red)' : 'var(--green)'},
-      {label:'Requirement Gaps', value:String(unmetReqs.length), sub:unmetReqs.length ? 'Part 61 items still pending' : 'All tracked hour items met', color:unmetReqs.length ? 'var(--orange)' : 'var(--green)'},
-      {label:'Next Milestone', value:nextMilestone ? nextMilestone.name : 'Completed', sub:nextMilestone ? 'Current tracked training milestone' : 'All tracked milestones signed off', color:nextMilestone ? 'var(--amber)' : 'var(--green)'}
-    ];
-    const watchItems = [];
-    if(needsReview.length){
-      watchItems.push({title:'Lessons needing review', text:needsReview.slice(0,4).map(l=>`${l.id} ${l.title}`).join(' | ')});
-    }
-    if(unmetReqs.length){
-      watchItems.push({title:'Pending requirements', text:unmetReqs.slice(0,3).map(r=>r.name).join(' | ')});
-    }
-    if(nextMilestone){
-      watchItems.push({title:'Next milestone', text:`${nextMilestone.name} is the next major gate in the syllabus flow.`});
-    }
-    if(watchItems.length===0){
-      watchItems.push({title:'Training status', text:'Current lessons, requirements, and milestones appear on track based on tracked data.'});
-    }
+    const nextAction = H.nextTrainingAction(s);
+    const needsReview = H.needsReview(s);
+    const nextLessonId = nextAction?.action === 'open-lesson'
+      ? (nextAction.actionAttr?.match(/data-lid="([^"]+)"/)?.[1] || null)
+      : null;
+    const nextLesson = nextLessonId ? (GL[nextLessonId]||FL[nextLessonId]) : null;
+    const nextIsFL = nextLessonId && !!FL[nextLessonId];
+    const nextObjs = nextLesson?.objectives?.slice(0,3) || [];
+    const readinessSig = H.readinessDecisionSignal(s);
+    const weatherSig = H.weatherDecisionSignal(s);
     return`
-    <div class="dashboard-hero">
-      <div class="dashboard-hero-main">
-        <div class="dashboard-hero-eyebrow">Active Student</div>
-        <div class="dashboard-hero-name">${s.name.toUpperCase()}</div>
-        <div class="dashboard-hero-meta">Part ${s.partType||61} &middot; Started: ${s.startDate||'Not set'} &middot; CFI: ${s.cfi||'Not assigned'} &middot; KJQF</div>
-        <div class="dashboard-hero-phase">
-          <span class="phase-pill" style="--phase-pill-color:${activePhase.color}">${activePhase.icon} ${activePhase.title}</span>
-          <span class="dashboard-hero-note">Keep lesson flow, tracked time, and sign-offs aligned from one place.</span>
+    <!-- Zone 1: Student Context -->
+    <div class="page-hd">
+      <div class="page-hd-main">
+        <div class="page-hd-eyebrow">Active Student</div>
+        <div class="page-hd-title">${s.name.toUpperCase()}</div>
+        <div class="page-hd-sub">
+          <span class="chip chip--accent">${activePhase.icon} ${activePhase.title}</span>
+          ${nextAction ? ` &middot; Next: <strong>${nextAction.title||''}</strong>` : ''}
         </div>
       </div>
-      <div class="dashboard-hero-actions">
+      <div class="page-hd-actions">
         <button class="btn btn-primary btn-sm" data-click-action="nav-lessons">Open Lessons</button>
-        <button class="btn btn-ghost btn-sm" data-click-action="nav" data-view="requirements">Requirements</button>
-        <button class="btn btn-ghost btn-sm" data-click-action="nav" data-view="reports">Report</button>
       </div>
     </div>
-    <div class="dashboard-priority-grid">
-      <div class="action-panel action-panel-${nextAction?.tone||'primary'}">
-        <div class="action-panel-label">Next Best Action</div>
-        <div class="action-panel-title">${nextAction?.title||'Continue Training'}</div>
-        <div class="action-panel-text">${nextAction?.detail||'Open the next lesson and continue training.'}</div>
-        <div class="action-panel-row">
-          <button class="btn btn-primary" data-click-action="${nextAction?.action||'nav-lessons'}" ${nextAction?.actionAttr||''}>${nextAction?.cta||'Open Lessons'}</button>
-          <button class="btn btn-ghost" data-click-action="nav" data-view="reports">Readiness Report</button>
+    <!-- Zone 2: Today's Plan -->
+    <div class="g2" style="margin-bottom:18px">
+      <div class="card">
+        <div class="card-hd">
+          <span class="card-title">Next Lesson</span>
+          ${nextIsFL ? '<span class="chip chip--accent">Flight</span>' : '<span class="chip">Ground</span>'}
         </div>
+        ${nextLesson ? `
+          <div style="font-family:var(--ff-display);font-size:20px;letter-spacing:1px;color:var(--text);margin-bottom:8px">${nextLessonId} — ${nextLesson.title}</div>
+          ${nextObjs.length ? `
+            <div class="section-lbl">Objectives Preview</div>
+            <ul style="margin:0 0 14px 16px;padding:0;font-size:13px;color:var(--text2)">
+              ${nextObjs.map(o=>`<li>${o}</li>`).join('')}
+            </ul>` : ''}
+          <button class="btn btn-primary btn-sm" data-click-action="open-lesson" data-lid="${nextLessonId}">&rarr; Open Lesson</button>
+        ` : '<div style="color:var(--text3);font-size:13px">All lessons complete.</div>'}
       </div>
-      <div class="dashboard-status-card">
-        <div class="card-hd"><div class="card-title">Status Summary</div></div>
-        <div class="dashboard-status-grid">
-          ${statusCards.map(item=>`<div class="dashboard-status-item"><div class="dashboard-status-label">${item.label}</div><div class="dashboard-status-value" style="color:${item.color}">${item.value}</div><div class="dashboard-status-sub">${item.sub}</div></div>`).join('')}
+      <div class="card">
+        <div class="card-hd"><span class="card-title">Readiness</span></div>
+        <div style="margin-bottom:12px;padding:8px;border-radius:6px;background:var(--bg3);border:1px solid var(--border)"><strong>${readinessSig.label}:</strong> ${readinessSig.summary}</div>
+        <div style="margin-bottom:12px;padding:8px;border-radius:6px;background:var(--bg3);border:1px solid var(--border)"><strong>${weatherSig.label}:</strong> ${weatherSig.summary}</div>
+        <div class="section-lbl">Hours Progress</div>
+        <div class="prog-wrap">
+          <div class="prog-hd"><span class="prog-lbl">Total</span><span class="prog-v">${totalHrs.toFixed(1)} / 40</span></div>
+          <div class="prog-bar"><div class="prog-fill" style="width:${totalPct}%;background:var(--amber)"></div></div>
+        </div>
+        <div class="prog-wrap">
+          <div class="prog-hd"><span class="prog-lbl">Dual</span><span class="prog-v">${dualHrs.toFixed(1)} / 20</span></div>
+          <div class="prog-bar"><div class="prog-fill" style="width:${dualPct}%;background:var(--blue)"></div></div>
+        </div>
+        <div class="prog-wrap">
+          <div class="prog-hd"><span class="prog-lbl">Solo</span><span class="prog-v">${soloHrs.toFixed(1)} / 10</span></div>
+          <div class="prog-bar"><div class="prog-fill green" style="width:${soloPct}%"></div></div>
         </div>
       </div>
     </div>
+    <!-- Gauges strip -->
     <div class="dashboard-gauges">
       ${H.gaugeCard('Total Time', totalHrs, totalHrs.toFixed(1), '40 hrs', totalPct, 'var(--amber)', 'hrs')}
       ${H.gaugeCard('Dual', dualHrs, dualHrs.toFixed(1), '20 hrs', dualPct, 'var(--blue)', 'hrs')}
       ${H.gaugeCard('Solo', soloHrs, soloHrs.toFixed(1), '10 hrs', soloPct, 'var(--green)', 'hrs')}
-      ${H.gaugeCard('Sec. 61.109', reqDone, String(reqDone), REQS.length+' req', reqPct, reqDone===REQS.length?'var(--green)':'var(--orange)', 'met')}
+      ${H.gaugeCard('§61.109', reqDone, String(reqDone), REQS.length+' req', reqPct, reqDone===REQS.length?'var(--green)':'var(--orange)', 'met')}
     </div>
-    <div class="card readiness-shell" style="margin-bottom:14px">
-      <div class="card-hd"><div class="card-title">Instructor Readiness Snapshot</div></div>
-      <div class="readiness-grid">
-        ${H.renderReadinessCard('Solo Readiness Indicators', readiness.solo)}
-        ${H.renderReadinessCard('Checkride Readiness Indicators', readiness.checkride)}
+    <!-- Zone 3: Attention Items as horizontal chip strip -->
+    <div class="card" style="margin-top:18px">
+      <div class="card-hd">
+        <span class="card-title">Attention Items</span>
+        <button class="btn btn-ghost btn-sm" data-click-action="nav" data-view="reports">See all &rarr;</button>
       </div>
-      <div class="card procedure-support-card">
-        ${H.renderCombinedGuidance('Study / Brief Next', combinedGuidance, 'No specific combined review bundle is suggested from the current readiness snapshot.')}
-      </div>
-      <div class="card procedure-support-card">
-        ${H.renderProcedureSupport('Procedure Support', procedureSupport, 'No specific procedure review is suggested from the current readiness snapshot.')}
-      </div>
-      <div class="readiness-disclaimer">${readiness.note}</div>
-    </div>
-    <div class="g2" style="margin-bottom:14px">
-      <div class="card">
-        <div class="card-hd"><div class="card-title">Training Progress</div>
-          <button class="btn btn-ghost btn-sm" data-click-action="nav-lessons" style="margin-left:auto;font-size:11px">View Lessons</button>
+      ${needsReview.length ? `
+        <div style="display:flex;flex-wrap:nowrap;overflow-x:auto;gap:6px;padding-bottom:4px">
+          ${needsReview.slice(0,8).map(l=>`<button class="chip chip--red" data-click-action="open-lesson" data-lid="${l.id}" style="cursor:pointer;border:none">${l.id} ${l.title}</button>`).join('')}
         </div>
-        ${PHASES.map(p=>{
-          const allLids=H.phaseLessonIds(p);
-          const done=allLids.filter(lid=>getLStatus(s,lid)==='signed_off').length;
-          const total=allLids.length;
-          const pct=total>0?Math.round(done/total*100):0;
-          return`<div class="prog-wrap" style="cursor:pointer" data-click-action="nav-phase-lessons" data-phase="${p.id}">
-            <div class="prog-hd">
-              <span class="prog-lbl">${p.icon} ${p.title}</span>
-              <span class="prog-v" style="color:${p.color}">${done}/${total}</span>
-            </div>
-            <div class="prog-bar"><div class="prog-fill" style="width:${pct}%;background:${p.color}"></div></div>
-          </div>`;
-        }).join('')}
-        <div class="prog-wrap" style="margin-top:2px;padding-top:8px;border-top:1px solid var(--border)">
-          <div class="prog-hd"><span class="prog-lbl">Sec. 61.109 Requirements</span><span class="prog-v" style="color:var(--green)">${reqDone}/${REQS.length}</span></div>
-          <div class="prog-bar"><div class="prog-fill green" style="width:${Math.round(reqDone/REQS.length*100)}%"></div></div>
-        </div>
-      </div>
-      <div class="dashboard-watch-card">
-        <div class="card-hd"><div class="card-title">Attention Items</div></div>
-        <div class="dashboard-list">
-          ${watchItems.map(item=>`<div class="dashboard-list-item"><div class="dashboard-list-body"><div class="dashboard-list-title">${item.title}</div><div class="dashboard-list-text">${item.text}</div></div></div>`).join('')}
-          ${recs.slice(0,2).map(item=>`<div class="dashboard-list-item"><div class="dashboard-list-body"><div class="dashboard-list-title">Training Note</div><div class="dashboard-list-text">${item.text}</div></div></div>`).join('')}
-        </div>
-        <div class="dashboard-actions">
-          <button class="btn btn-ghost btn-sm" data-click-action="nav" data-view="requirements">Review Requirements</button>
-          <button class="btn btn-ghost btn-sm" data-click-action="nav" data-view="proficiency">View Proficiency</button>
-        </div>
-      </div>
-    </div>
-    ${V.scheduleCard(s)}`;
+      ` : '<div style="color:var(--text3);font-size:13px">No lessons currently flagged.</div>'}
+    </div>`;
   },
   preflightDecision(s){
     const panel = H.preflightDecision(s);
@@ -3193,11 +3258,19 @@ const V={
           const pohLinks = H.relatedPohRefsForProcedure(selected.id);
           const section = (label, items, kind='list') => {
             if(!items || !items.length) return '';
+            let content;
+            if(kind==='checklist'){
+              content=`<ol class="proc-checklist">${items.map(item=>`<li>${item}</li>`).join('')}</ol>`;
+            } else if(kind==='callout'){
+              content=`<div class="proc-notes">${items.map(item=>`<div class="proc-note proc-note--callout"><span class="proc-note-icon">&#9873;</span><span>${item}</span></div>`).join('')}</div>`;
+            } else if(kind==='warning'){
+              content=`<div class="proc-notes">${items.map(item=>`<div class="proc-note proc-note--warning"><span class="proc-note-icon">&#9888;</span><span>${item}</span></div>`).join('')}</div>`;
+            } else {
+              content=`<ol class="proc-steps">${items.map(item=>`<li class="proc-step">${item}</li>`).join('')}</ol>`;
+            }
             return `<div class="procedure-section">
-              <div class="section-label">${label}</div>
-              ${kind==='checklist'
-                ? `<ul class="checklist">${items.map(item=>`<li><span>•</span><span>${item}</span></li>`).join('')}</ul>`
-                : `<div class="procedure-steps">${items.map(item=>`<div class="procedure-step">${item}</div>`).join('')}</div>`}
+              <div class="proc-section-label">${label}</div>
+              ${content}
             </div>`;
           };
           return `<div class="procedure-detail-card">
@@ -3211,20 +3284,15 @@ const V={
                 ${H.procedureSourceMarkup(selected)}
               </div>
             </div>
-            <div class="alert alert-amber">
-              <div>
-                <strong>Aircraft-specific training reference.</strong>
-                Use with instructor guidance and the applicable POH/AFM and approved checklist.
-              </div>
-            </div>
+            <span class="section-lbl" style="font-style:italic">Ref: ${selected.sourceLabel||''} p.${selected.sourcePage||''} · Use with applicable POH/AFM</span>
             ${selected.targetSpeeds?.length?`<div class="procedure-speed-grid">${selected.targetSpeeds.map(item=>`<div class="procedure-speed-chip">${item}</div>`).join('')}</div>`:''}
             ${section('Checklist', selected.checklist, 'checklist')}
             ${section('Setup', selected.setup)}
             ${section('Entry', selected.entry)}
             ${section('Execution', selected.execution)}
             ${section('Recovery', selected.recovery)}
-            ${section('Callouts and Notes', selected.callouts)}
-            ${section('Warnings', selected.warnings)}
+            ${section('Callouts and Notes', selected.callouts, 'callout')}
+            ${section('Warnings', selected.warnings, 'warning')}
             ${pohLinks.length?`<div class="card poh-inline-card">
               ${H.renderPohSupport('POH Support', pohLinks.slice(0,3), 'No handbook reference is linked to this procedure yet.')}
             </div>`:''}
@@ -3254,11 +3322,11 @@ const V={
         </div>
       </div>
     </div>
+    <div class="proc-cat-tabs">
+      ${PROCEDURE_CATEGORIES.map(cat=>`<button class="proc-cat-tab${curProcedureCategory===cat.id?' active':''}" data-click-action="set-procedure-category" data-category="${cat.id}">${cat.label}</button>`).join('')}
+    </div>
     <div class="procedure-toolbar">
       <input class="finput procedure-search" placeholder="Search procedures, callouts, or lesson IDs" value="${searchValue}" data-input-action="filter-procedures">
-      <div class="procedure-filter-row">
-        ${PROCEDURE_CATEGORIES.map(cat=>`<button class="btn btn-sm ${curProcedureCategory===cat.id?'btn-primary':'btn-ghost'}" data-click-action="set-procedure-category" data-category="${cat.id}">${cat.label}</button>`).join('')}
-      </div>
     </div>
     <div class="procedure-layout">
       <div class="procedure-list-column">${procedureList}</div>
@@ -3376,18 +3444,13 @@ const V={
     const tabs = studentMode
       ? [
           {id:'homework', label:'Homework'},
-          {id:'objectives', label:'Objectives'},
+          {id:'objectives', label:'Brief'},
           {id:'scenario', label:'Scenario'}
         ]
       : [
-          {id:'tasks', label:'&#10003; Tasks'},
-          {id:'objectives', label:'&#9671; Objectives'},
-          {id:'scenario', label:'&#9654; Scenario'},
-          {id:'instructor', label:'&#9432; Instructor'},
-          ...(isFL ? [{id:'srm', label:'5P Pre-Brief'}] : []),
-          {id:'debrief', label:'&#9998; Debrief'},
-          {id:'homework', label:'&#128216; Homework'},
-          ...((lesson.isStageCheck||lesson.isEndOfCourse) ? [{id:'stagecheck', label:'&#9733; Check Form', style:'color:var(--amber);font-weight:600'}] : [])
+          {id:'plan',    label:'&#10022; Plan'},
+          {id:'fly',     label:'&#9654; Fly'},
+          {id:'debrief', label:'&#9998; Debrief'}
         ];
     return`
     ${stickyBar}
@@ -3438,15 +3501,19 @@ const V={
 
   lessonTab(lid,s,tab){
     tab=studentSafeLessonTab(tab);
+    const _lesson=GL[lid]||FL[lid];
+    if(tab==='stagecheck'&&!(_lesson?.isStageCheck||_lesson?.isEndOfCourse)) tab='tasks';
     switch(tab){
       case 'tasks':      return this.tabTasks(lid,s);
       case 'objectives':  return this.tabObjectives(lid,s);
       case 'scenario':    return this.tabScenario(lid,s);
       case 'instructor':  return this.tabInstructor(lid,s);
       case 'srm':         return this.tabSRM(lid,s);
-      case 'debrief':     return this.tabDebrief(lid,s);
+      case 'debrief':     return this.tabDebrief3(lid,s);
       case 'stagecheck':  return this.tabStageCheck(lid,s);
       case 'homework':    return this.tabHomework(lid,s);
+      case 'plan':        return this.tabPlan(lid,s);
+      case 'fly':         return this.tabFly(lid,s);
       default:return'';
     }
   },
@@ -3628,19 +3695,57 @@ const V={
     const lesson=GL[lid]||FL[lid];
     const isFL=lesson.type==='flight';
     const stageCtx=isFL
-        ?`Stage ${lesson.stage} Flight Lesson - ${['','Pre-Solo','Cross-Country & Night','Practical Test'][lesson.stage]||''}`
-        :`Stage ${lesson.stage} Ground Lesson - ${lesson.stage===1?'Aviation Foundations':'Weather, Navigation & Planning'}`;
-    const tolLines=lesson.tolerance
-      ?Object.entries(lesson.tolerance).map(([k,v])=>`${k}: <strong>${v}</strong>`).join(' &nbsp;&middot;&nbsp; ')
-      :'ACS Completion Standard';
+        ?`Stage ${lesson.stage} Flight Lesson · ${['','Pre-Solo','Cross-Country & Night','Practical Test'][lesson.stage]||''}`
+        :`Stage ${lesson.stage} Ground Lesson · ${lesson.stage===1?'Aviation Foundations':'Weather, Navigation & Planning'}`;
     const taskObjs=lesson.tasks||[];
+    const debriefQs=lesson.debrief||[];
+    const studentMode=isStudentMode();
+
     return`
+    <!-- Lesson header -->
     <div style="background:linear-gradient(135deg,var(--bg3),var(--bg2));border:1px solid var(--border);border-radius:var(--r);padding:13px 15px;margin-bottom:14px">
       <div style="font-family:var(--ff-mono);font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:3px">${stageCtx}</div>
-      <div style="font-family:var(--ff-display);font-size:20px;letter-spacing:2px;margin-bottom:6px">${lesson.title}</div>
-      <div style="font-family:var(--ff-mono);font-size:11px;color:var(--amber)">${tolLines}</div>
+      <div style="font-family:var(--ff-display);font-size:20px;letter-spacing:2px;margin-bottom:4px">${lesson.title}</div>
+      <div style="font-family:var(--ff-mono);font-size:11px;color:var(--text3)">${isFL?'Flight lesson':'Ground lesson'} · ${taskObjs.length} objective${taskObjs.length!==1?'s':''}</div>
     </div>
-    <div class="section-label">By the end of this lesson the student will be able to:</div>
+
+    ${lesson.scenario?`
+    <!-- What to expect this flight (flight lessons) -->
+    <div class="section-label">What to expect this flight</div>
+    <div style="background:linear-gradient(135deg,rgba(29,78,216,.08),rgba(29,78,216,.04));border:1px solid rgba(99,179,237,.2);border-left:3px solid var(--blue);border-radius:var(--r);padding:12px 14px;margin-bottom:14px">
+      <div style="font-size:13px;color:var(--text);line-height:1.65">${lesson.scenario}</div>
+    </div>
+    `:''}
+
+    ${!isFL&&lesson.coaching&&!studentMode?`
+    <!-- CFI lesson approach (ground lessons, instructor mode only) -->
+    <div class="section-label">Lesson approach</div>
+    <div style="background:linear-gradient(135deg,rgba(217,119,6,.07),rgba(217,119,6,.03));border:1px solid rgba(217,119,6,.25);border-left:3px solid var(--amber);border-radius:var(--r);padding:12px 14px;margin-bottom:14px">
+      <div style="font-size:13px;color:var(--text);line-height:1.65">${lesson.coaching}</div>
+    </div>
+    `:''}
+
+    ${!isFL&&studentMode?`
+    <!-- Student-facing ground lesson intent -->
+    <div class="section-label">What we're covering today</div>
+    <div style="background:var(--bg3);border:1px solid var(--border);border-left:3px solid var(--amber);border-radius:var(--r);padding:12px 14px;margin-bottom:14px">
+      <div style="font-size:13px;color:var(--text2);line-height:1.65">This is a <strong>${lesson.hrs}-hour ground lesson</strong> covering ${lesson.title.toLowerCase()}. Come prepared with any questions from your reading. The pre-flight discussion below outlines what we'll talk through together before moving on.</div>
+    </div>
+    `:''}
+
+    ${debriefQs.length>0?`
+    <!-- Pre-flight discussion questions -->
+    <div class="section-label">Pre-flight discussion</div>
+    <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:16px">
+      ${debriefQs.map(q=>`
+      <div style="display:flex;gap:10px;align-items:flex-start;background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:9px 12px">
+        <span style="font-family:var(--ff-mono);font-size:14px;color:var(--blue);line-height:1.3;flex-shrink:0">?</span>
+        <div style="font-size:13px;color:var(--text2);line-height:1.5">${q}</div>
+      </div>`).join('')}
+    </div>`:''}
+
+    <!-- Lesson objectives -->
+    <div class="section-label">We'll work on</div>
     <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:16px">
       ${taskObjs.map((t,i)=>{
         const acsCode=(t.acsRef||'').split(',')[0].trim();
@@ -3657,8 +3762,19 @@ const V={
         </div>`;
       }).join('')}
     </div>
+
+    ${isFL&&lesson.tolerance?`
+    <div class="section-label">Completion standards</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+      ${Object.entries(lesson.tolerance).map(([k,v])=>`
+      <div style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:10px 14px;text-align:center">
+        <div style="font-family:var(--ff-mono);font-size:10px;color:var(--text3);text-transform:uppercase">${k}</div>
+        <div style="font-family:var(--ff-display);font-size:20px;letter-spacing:1px;color:var(--amber)">${v}</div>
+      </div>`).join('')}
+    </div>`:''}
+
     ${(lesson.acsItems||[]).length>0?`
-    <div class="section-label">ACS Areas of Operation Addressed</div>
+    <div class="section-label">ACS areas addressed</div>
     <div style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:12px;margin-bottom:14px">
       ${lesson.acsItems.map(a=>{
         const code=a.split(' ')[0];
@@ -3668,15 +3784,6 @@ const V={
           <span style="color:var(--text2)">${a.replace(code+' ','')}</span>
         </div>`;
       }).join('')}
-    </div>`:''}
-    ${isFL&&lesson.tolerance?`
-    <div class="section-label">Completion Standards</div>
-    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
-      ${Object.entries(lesson.tolerance).map(([k,v])=>`
-      <div style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:10px 14px;text-align:center">
-        <div style="font-family:var(--ff-mono);font-size:10px;color:var(--text3);text-transform:uppercase">${k}</div>
-        <div style="font-family:var(--ff-display);font-size:20px;letter-spacing:1px;color:var(--amber)">${v}</div>
-      </div>`).join('')}
     </div>`:''}`;
   },
 
@@ -3852,7 +3959,7 @@ ${lesson.isStageCheck?'<div style="font-family:var(--ff-mono);font-size:10px;col
       if(!hw) return '<div class="alert alert-warn">Homework is not available for this lesson.</div>';
       const printActive = curHomeworkView !== 'digital';
       const backTab = isStudentMode() ? 'objectives' : 'tasks';
-      const backLabel = isStudentMode() ? 'Objectives' : 'Back to Lesson';
+      const backLabel = isStudentMode() ? 'Brief' : 'Back to Lesson';
       return `
       <div class="hw-shell">
         <div class="hw-screen-only hw-toolbar">
@@ -4156,28 +4263,42 @@ ${lesson.isStageCheck?'<div style="font-family:var(--ff-mono);font-size:10px;col
 
   tabDebrief(lid,s){
     const lesson=GL[lid]||FL[lid];
-    const isFL=lesson.type==='flight';const hasS=!!s;
+    const isFL=lesson.type==='flight';
+    const hasS=!!s;
     const debrief=debriefRecord(s,lid);
     const note=debrief.instructorNotes;
-    const entries=s?.data?.logEntries?.[lid]||[];
-    const dates=s?.data?.lessonDates?.[lid]||{};
+    const taskObjs=lesson.tasks||[];
+    const debriefQs=lesson.debrief||[];
     return`
-    ${lesson.debrief?.length>0?`<div class="section-label">Debrief Questions</div>
-    <ul class="checklist" style="margin-bottom:14px">
-      ${lesson.debrief.map(q=>`<li><span class="cl-dot" style="color:var(--blue)">?</span><span>${q}</span></li>`).join('')}
-    </ul>`:''}
+    <!-- Performance review — one prompt per lesson objective -->
+    ${taskObjs.length>0?`
+    <div class="section-label">Performance review</div>
+    <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:16px">
+      ${taskObjs.map((t,i)=>`
+      <div style="display:flex;gap:10px;align-items:flex-start;background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:9px 12px">
+        <span style="font-family:var(--ff-display);font-size:18px;color:var(--amber);line-height:1;width:24px;flex-shrink:0">${i+1}</span>
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:500;color:var(--text);margin-bottom:2px">${t.text}</div>
+          <div style="font-size:12px;color:var(--text3);font-style:italic">How did this go? To standard, close, or needs more work?${t.subtasks?.length?` (${t.subtasks.length} proficiency items)`:''}</div>
+        </div>
+      </div>`).join('')}
+    </div>`:''}
+
+    <!-- Knowledge debrief questions -->
+    ${debriefQs.length>0?`
+    <div class="section-label">Knowledge check</div>
+    <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:16px">
+      ${debriefQs.map(q=>`
+      <div style="display:flex;gap:10px;align-items:flex-start;background:var(--bg3);border:1px solid var(--border);border-left:3px solid var(--blue);border-radius:var(--r);padding:9px 12px">
+        <span style="font-family:var(--ff-mono);font-size:13px;color:var(--blue);line-height:1.4;flex-shrink:0">?</span>
+        <div style="font-size:13px;color:var(--text2);line-height:1.5">${q}</div>
+      </div>`).join('')}
+    </div>`:''}
+
     ${hasS?`
-    <div style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:12px 14px;margin-bottom:12px">
-      <div style="font-family:var(--ff-mono);font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Lesson Schedule</div>
-      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
-        <div class="fg" style="margin:0"><label>Planned Date</label><input class="finput" type="date" id="ld_planned_${lid}" value="${dates.planned||''}" data-change-action="set-lesson-date" data-lid="${lid}" data-field="planned" style="width:145px"></div>
-        <div class="fg" style="margin:0"><label>Completed Date</label><input class="finput" type="date" id="ld_done_${lid}" value="${dates.completed||''}" data-change-action="set-lesson-date" data-lid="${lid}" data-field="completed" style="width:145px"></div>
-        <div class="fg" style="margin:0;flex:1;min-width:140px"><label>Schedule Note</label><input class="finput" value="${dates.schednote||''}" placeholder="Weather hold, rescheduled..." data-change-action="set-lesson-date" data-lid="${lid}" data-field="schednote" style="width:100%"></div>
-      </div>
-    </div>
     <div class="debrief-grid">
       <div class="debrief-card">
-        <div class="section-label">Debrief Summary</div>
+        <div class="section-label">Debrief summary</div>
         <div class="debrief-fields">
           <div class="fg" style="margin:0">
             <label>Lesson Outcome</label>
@@ -4203,40 +4324,85 @@ ${lesson.isStageCheck?'<div style="font-family:var(--ff-mono);font-size:10px;col
         </div>
       </div>
       <div class="debrief-card">
-        <div class="section-label">What Went Well</div>
+        <div class="section-label">What went well</div>
         <textarea class="ftextarea debrief-textarea" id="debrief_wentwell_${lid}" placeholder="Short bullets or one item per line.">${debrief.wentWell}</textarea>
       </div>
       <div class="debrief-card">
-        <div class="section-label">Needs Work</div>
+        <div class="section-label">Needs work</div>
         <textarea class="ftextarea debrief-textarea" id="debrief_needswork_${lid}" placeholder="What needs more practice before moving on?">${debrief.needsWork}</textarea>
       </div>
       <div class="debrief-card">
-        <div class="section-label">Review Before Next Lesson</div>
+        <div class="section-label">Review before next lesson</div>
         <textarea class="ftextarea debrief-textarea" id="debrief_review_${lid}" placeholder="List the items to review before the next lesson.">${debrief.reviewBeforeNext}</textarea>
       </div>
       <div class="debrief-card">
-        <div class="section-label">Next Lesson Focus</div>
+        <div class="section-label">Next lesson focus</div>
         <textarea class="ftextarea debrief-textarea" id="debrief_next_${lid}" placeholder="What should the next lesson focus on?">${debrief.nextLessonFocus}</textarea>
       </div>
       <div class="debrief-card">
-        <div class="section-label">Homework Emphasis</div>
+        <div class="section-label">Homework emphasis</div>
         <textarea class="ftextarea debrief-textarea" id="debrief_homework_${lid}" placeholder="Student-facing homework emphasis or prep note.">${debrief.homeworkEmphasis}</textarea>
       </div>
     </div>
-    <div class="section-label" style="margin-top:10px">${isFL?'Post-Flight ':''}Instructor Notes</div>
+    <div class="section-label" style="margin-top:10px">${isFL?'Post-flight ':''}Instructor notes</div>
     <textarea class="ftextarea" id="lesson_note" placeholder="Optional instructor-only note, carry-forward item, or lesson-specific detail.">${note}</textarea>
-    ${isFL?`<div class="section-label" style="margin-top:10px">Logbook Entry</div>
-    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:10px">
-      <div class="fg" style="margin:0"><label>Date</label><input class="finput" type="date" id="log_date" value="${new Date().toISOString().split('T')[0]}" style="width:130px"></div>
-      <div class="fg" style="margin:0"><label>Dual</label><input class="hrs-input" type="number" step="0.1" min="0" id="log_dual" placeholder="0.0" value="${lesson.hrs.dual||''}"></div>
-      <div class="fg" style="margin:0"><label>Solo</label><input class="hrs-input" type="number" step="0.1" min="0" id="log_solo" placeholder="0.0" value="${lesson.hrs.solo||''}"></div>
-      <div class="fg" style="margin:0"><label>Instrument</label><input class="hrs-input" type="number" step="0.1" min="0" id="log_inst" placeholder="0.0" value="${lesson.hrs.instrument||''}"></div>
-      <div class="fg" style="margin:0"><label>Night</label><input class="hrs-input" type="number" step="0.1" min="0" id="log_night" placeholder="0.0" value="${lesson.hrs.night||''}"></div>
-    </div>`:''}
-    <button class="btn btn-primary btn-sm" id="save_btn" data-click-action="save-note" data-lid="${lid}">Save Debrief</button>
-    ${entries.length>0?`<div class="divider"></div><div class="section-label">Previous Entries</div>
-    ${entries.map(e=>`<div class="log-entry"><div class="log-hd"><span class="log-date">${e.date}</span><span class="log-hrs">${e.dual>0?e.dual+'D ':''} ${e.solo>0?e.solo+'S ':''} ${e.inst>0?e.inst+'IR ':''} ${e.night>0?e.night+'N':''}</span></div>${e.note?`<div class="log-note">${e.note}</div>`:''}</div>`).join('')}`:''}
-`:`<div class="alert alert-info">Select a student to record debrief notes.</div>`}`;
+    <button class="btn btn-primary btn-sm" style="margin-top:10px" id="save_btn" data-click-action="save-note" data-lid="${lid}">Save Debrief</button>
+    `:`<div class="alert alert-info">Select a student to record debrief notes.</div>`}`;
+  },
+
+  tabPlan(lid,s){
+    const lesson=GL[lid]||FL[lid];
+    if(!lesson) return '';
+    return `
+      <div class="tab-section">
+        <div class="section-lbl">Objectives</div>
+        ${this.tabObjectives(lid,s)}
+      </div>
+      <div class="tab-section" style="margin-top:18px">
+        <div class="section-lbl">Scenario</div>
+        ${this.tabScenario(lid,s)}
+      </div>
+      <div class="tab-section" style="margin-top:18px">
+        <div class="section-lbl">Tasks</div>
+        ${this.tabTasks(lid,s)}
+      </div>`;
+  },
+
+  tabFly(lid,s){
+    const lesson=GL[lid]||FL[lid];
+    if(!lesson) return '';
+    const isFL=!!FL[lid];
+    if(isFL){
+      return `
+        <div class="tab-section">
+          <div class="section-lbl">5P Pre-Brief</div>
+          ${this.tabSRM(lid,s)}
+        </div>
+        <div class="tab-section" style="margin-top:18px">
+          <div class="section-lbl">Live Task Grading</div>
+          ${this.tabTasks(lid,s)}
+        </div>`;
+    }
+    return `
+      <div class="section-lbl" style="margin-bottom:10px">Ground Lesson — no 5P pre-brief</div>
+      ${this.tabTasks(lid,s)}`;
+  },
+
+  tabDebrief3(lid,s){
+    if (isStudentMode()) return this.tabDebrief(lid,s);
+    const lesson=GL[lid]||FL[lid];
+    if(!lesson) return '';
+    const isCheck=lesson.isStageCheck||lesson.isEndOfCourse;
+    return `
+      <div class="tab-section">
+        <div class="section-lbl">Debrief</div>
+        ${this.tabDebrief(lid,s)}
+      </div>
+      <div class="tab-section" style="margin-top:18px">
+        <div class="section-lbl">Homework</div>
+        ${this.tabHomework(lid,s)}
+      </div>
+      ${isCheck ? `<div class="tab-section" style="margin-top:18px"><div class="section-lbl">Stage Check Form</div>${this.tabStageCheck(lid,s)}</div>` : ''}`;
   },
 
   requirements(s){
@@ -4278,6 +4444,32 @@ ${lesson.isStageCheck?'<div style="font-family:var(--ff-mono);font-size:10px;col
         </div>`;
       }).join('')}
     </div>`;
+  },
+
+  tools(s, tab='xwind'){
+    const TOOL_TABS=[
+      {id:'xwind',   icon:'⇌',  label:'Crosswind'},
+      {id:'wx',      icon:'☁',  label:'Weather'},
+      {id:'wb',      icon:'⚖',  label:'W & B'},
+      {id:'performance', icon:'PF', label:'Performance'},
+      {id:'decision',icon:'⚠',  label:'Go / No-Go'},
+      {id:'5p',      icon:'✈',  label:'5P Pre-Flight'},
+    ];
+    let inner='';
+    switch(tab){
+      case 'xwind':       inner=V.xwind();break;
+      case 'wx':          inner=V.wx(s);break;
+      case 'wb':          inner=V.weightBalance();break;
+      case 'performance': inner=V.performance(s);break;
+      case 'decision':    inner=V.preflightDecision(s);break;
+      case '5p':          inner=V.fiveP(s);break;
+    }
+    const tabBar=`<div class="tabs tools-tabs" style="margin-bottom:20px">${
+      TOOL_TABS.map(t=>`<div class="tab${t.id===tab?' active':''}" data-click-action="tools-tab" data-tab="${t.id}">
+        <span style="margin-right:5px">${t.icon}</span>${t.label}
+      </div>`).join('')
+    }</div>`;
+    return tabBar+inner;
   },
 
   fiveP(s){
@@ -4418,58 +4610,6 @@ ${lesson.isStageCheck?'<div style="font-family:var(--ff-mono);font-size:10px;col
     <!-- 5P Sections -->
     <div class="srm-sections-list">
       ${ps.map(function(p){return pSection(p);}).join('')}
-    </div>`;
-  },
-
-  e6b(){
-    return`<div class="tool-wrap">
-    <div class="tool-header">
-      <div class="tool-icon">&#10022;</div>
-      <div><div class="tool-title">E6-B FLIGHT COMPUTER</div>
-      <div class="tool-sub">Time · Speed · Distance · Fuel · True Airspeed · Wind Correction</div></div>
-    </div>
-    <div class="tool-tabs" id="e6b-tabs">
-      <button class="tool-tab active" data-click-action="e6b-tab" data-panel="tsd">Time / Speed / Dist</button>
-      <button class="tool-tab" data-click-action="e6b-tab" data-panel="fuel">Fuel</button>
-      <button class="tool-tab" data-click-action="e6b-tab" data-panel="tas">True Airspeed</button>
-      <button class="tool-tab" data-click-action="e6b-tab" data-panel="wind">Wind Correction</button>
-    </div>
-    <div id="e6b-tsd" class="tool-panel">
-      <div class="calc-grid">
-        <div class="calc-field"><label>Distance (NM)</label><input class="calc-input" id="tsd_dist" type="number" step="1" placeholder="e.g. 120" data-input-action="e6b-tsd"></div>
-        <div class="calc-field"><label>Groundspeed (kt)</label><input class="calc-input" id="tsd_gs" type="number" step="1" placeholder="e.g. 95" data-input-action="e6b-tsd"></div>
-        <div class="calc-field"><label>Time (min)</label><input class="calc-input" id="tsd_time" type="number" step="1" placeholder="e.g. 75" data-input-action="e6b-tsd"></div>
-      </div>
-      <div class="calc-hint">Enter any two - third is calculated automatically.</div>
-      <div id="tsd_result" class="calc-result" style="display:none"></div>
-    </div>
-    <div id="e6b-fuel" class="tool-panel" style="display:none">
-      <div class="calc-grid">
-        <div class="calc-field"><label>Flight Time (hrs)</label><input class="calc-input" id="fuel_time" type="number" step="0.1" placeholder="e.g. 2.5" data-input-action="e6b-fuel"></div>
-        <div class="calc-field"><label>Burn Rate (GPH)</label><input class="calc-input" id="fuel_gph" type="number" step="0.1" placeholder="e.g. 8.5" data-input-action="e6b-fuel"></div>
-        <div class="calc-field"><label>Reserve (min)</label><input class="calc-input" id="fuel_res" type="number" step="5" value="45" data-input-action="e6b-fuel"></div>
-      </div>
-      <div class="calc-hint">VFR day: 30 min · VFR night: 45 min (§91.151)</div>
-      <div id="fuel_result" class="calc-result" style="display:none"></div>
-    </div>
-    <div id="e6b-tas" class="tool-panel" style="display:none">
-      <div class="calc-grid">
-        <div class="calc-field"><label>Indicated Airspeed (kt)</label><input class="calc-input" id="tas_ias" type="number" step="1" placeholder="e.g. 105" data-input-action="e6b-tas"></div>
-        <div class="calc-field"><label>Pressure Altitude (ft)</label><input class="calc-input" id="tas_pa" type="number" step="100" placeholder="e.g. 6500" data-input-action="e6b-tas"></div>
-        <div class="calc-field"><label>OAT (°C)</label><input class="calc-input" id="tas_oat" type="number" step="1" placeholder="e.g. 15" data-input-action="e6b-tas"></div>
-      </div>
-      <div class="calc-hint">Density altitude calculated as a byproduct.</div>
-      <div id="tas_result" class="calc-result" style="display:none"></div>
-    </div>
-    <div id="e6b-wind" class="tool-panel" style="display:none">
-      <div class="calc-grid">
-        <div class="calc-field"><label>True Course (°)</label><input class="calc-input" id="wca_tc" type="number" step="1" placeholder="e.g. 090" data-input-action="e6b-wca"></div>
-        <div class="calc-field"><label>TAS (kt)</label><input class="calc-input" id="wca_tas" type="number" step="1" placeholder="e.g. 110" data-input-action="e6b-wca"></div>
-        <div class="calc-field"><label>Wind From (°)</label><input class="calc-input" id="wca_wdir" type="number" step="1" placeholder="e.g. 270" data-input-action="e6b-wca"></div>
-        <div class="calc-field"><label>Wind Speed (kt)</label><input class="calc-input" id="wca_wspd" type="number" step="1" placeholder="e.g. 20" data-input-action="e6b-wca"></div>
-      </div>
-      <div id="wca_result" class="calc-result" style="display:none"></div>
-    </div>
     </div>`;
   },
 
@@ -4706,6 +4846,85 @@ Live browser fetch is disabled because Aviation Weather Center blocks cross-orig
     </div>`;
   },
 
+
+  // ── PRE-SOLO KNOWLEDGE TEST ──────────────────────────────────────────────
+  presolo(s){
+    if(!s) return`<div class=”empty”><div class=”empty-icon”>&#9998;</div><div class=”empty-title”>NO STUDENT SELECTED</div><div class=”empty-txt”>Select a student to administer the §61.87(b) pre-solo written test.</div></div>`;
+
+    const tests=s.data?.presoloTests||[];
+    const best=tests.length?Math.max(...tests.map(t=>t.pct)):null;
+    const everPassed=tests.some(t=>t.passed);
+
+    // ── Test in progress ──
+    if(curPresoloTest){
+      const total=curPresoloTest.length;
+      const marked=curPresoloTest.filter(q=>q.pass!==null).length;
+      const passCount=curPresoloTest.filter(q=>q.pass===true).length;
+      const questions=curPresoloTest.map((item,i)=>{
+        const passActive=item.pass===true;
+        const failActive=item.pass===false;
+        return`<div class=”psq-card${passActive?' psq-pass':failActive?' psq-fail':''}”>
+          <div class=”psq-meta”>
+            <span class=”psq-num”>${String(i+1).padStart(2,'0')}</span>
+            <span class=”psq-source”>${item.lessonId} &middot; ${item.lessonTitle}</span>
+          </div>
+          <div class=”psq-text”>${item.q}</div>
+          <div class=”psq-actions”>
+            <button class=”psq-btn psq-btn-pass${passActive?' active':''}” data-click-action=”mark-presolo-q” data-idx=”${i}” data-val=”pass”>&#10003; Pass</button>
+            <button class=”psq-btn psq-btn-fail${failActive?' active':''}” data-click-action=”mark-presolo-q” data-idx=”${i}” data-val=”fail”>&#10007; Fail</button>
+          </div>
+        </div>`;
+      }).join('');
+      return`<div class=”psq-header”>
+        <div>
+          <div class=”psq-title-row”>
+            <span class=”psq-badge”>§ 61.87(b)</span>
+            <span class=”psq-student”>${s.name}</span>
+          </div>
+          <div class=”psq-progress-label”>${marked} of ${total} marked &middot; ${passCount} passing</div>
+        </div>
+        <div style=”display:flex;gap:8px”>
+          <button class=”btn btn-ghost btn-sm” data-click-action=”cancel-presolo-test”>Cancel</button>
+          <button class=”btn btn-primary btn-sm” data-click-action=”submit-presolo-test”>Submit Test</button>
+        </div>
+      </div>
+      <div class=”psq-progress-bar”><div class=”psq-progress-fill” style=”width:${total?Math.round(marked/total*100):0}%”></div></div>
+      <div class=”psq-list”>${questions}</div>`;
+    }
+
+    // ── Intro / history screen ──
+    const qTotal=PRESOLO_SOURCE_LESSONS.reduce((n,lid)=>n+(GL[lid]?.debrief?.length||0),0);
+    const historyRows=tests.slice(0,5).map(t=>`
+      <div class=”psq-hist-row”>
+        <span class=”psq-hist-date”>${t.date}</span>
+        <span class=”psq-hist-score”>${t.score}/${t.total}</span>
+        <span class=”psq-hist-pct”>${t.pct}%</span>
+        <span class=”psq-hist-result ${t.passed?'psq-hist-pass':'psq-hist-fail'}”>${t.passed?'PASSED':'FAILED'}</span>
+      </div>`).join('');
+
+    return`<div class=”psq-intro-grid”>
+      <div class=”card”>
+        <div class=”card-hd”><div class=”card-title”>§ 61.87(b) Requirement</div></div>
+        <p style=”font-size:14px;color:var(--text2);line-height:1.65;margin-bottom:14px”>Before solo flight, a student must pass a written test on the rules and procedures for the airport and the flight characteristics and operational limitations of the aircraft to be soloed.</p>
+        <div class=”psq-req-grid”>
+          <div class=”psq-req-chip”><span class=”psq-req-label”>Questions</span><span class=”psq-req-val”>${qTotal}</span></div>
+          <div class=”psq-req-chip”><span class=”psq-req-label”>Pass threshold</span><span class=”psq-req-val”>${PRESOLO_PASS_PCT}%</span></div>
+          <div class=”psq-req-chip”><span class=”psq-req-label”>Source</span><span class=”psq-req-val”>GL1 – GL6</span></div>
+        </div>
+        ${everPassed
+          ?`<div class=”alert alert-ok” style=”margin-top:14px”>&#10003; ${s.name} has a passing score on record. Endorsement criteria met.</div>`
+          :`<div class=”alert alert-amber” style=”margin-top:14px”>No passing score on record yet for ${s.name}.</div>`}
+        <button class=”btn btn-primary” style=”margin-top:16px;width:100%” data-click-action=”start-presolo-test”>Start New Test &rarr;</button>
+      </div>
+      <div class=”card”>
+        <div class=”card-hd”>
+          <div class=”card-title”>Test History</div>
+          ${best!==null?`<span class=”psq-best-badge”>Best: ${best}%</span>`:''}
+        </div>
+        ${tests.length?`<div class=”psq-hist”>${historyRows}</div>`:`<div class=”report-empty” style=”padding:24px 0”>No tests recorded yet.</div>`}
+      </div>
+    </div>`;
+  },
 
   // â”€â”€ v3: ACS PROFICIENCY HEATMAP â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   proficiency(s){
@@ -5043,7 +5262,7 @@ Live browser fetch is disabled because Aviation Weather Center blocks cross-orig
           <!-- Editable rows -->
           ${profile.stations.map(r=>`
           <tr id="wb_row_${r.id}">
-            <td style="padding:8px 10px;border-bottom:1px solid var(--border)">${r.label}</td>
+            <td style="padding:8px 10px;border-bottom:1px solid var(--border)">${r.id==='fuel'?`<span id="wbFuelLabel">Fuel (Avgas 6 lbs/gal)</span>`:r.label}</td>
             <td style="padding:8px 10px;border-bottom:1px solid var(--border);text-align:center;
                        font-family:var(--ff-mono);color:var(--text3)">${r.arm.toFixed(2)}</td>
             <td style="padding:8px 10px;border-bottom:1px solid var(--border);text-align:right">
@@ -5057,6 +5276,7 @@ Live browser fetch is disabled because Aviation Weather Center blocks cross-orig
                 style="width:110px;font-family:var(--ff-mono);font-size:13px;text-align:right;
                        padding:4px 8px;border:1.5px solid var(--border);border-radius:4px;
                        background:var(--bg2);color:var(--text);outline:none">
+              ${r.id==='fuel'?`<button id="wbFuelToggleBtn" class="btn btn-ghost btn-sm" data-click-action="wb-toggle-fuel-unit" style="margin-left:6px;font-size:10px;padding:2px 6px">→ gal</button>`:''}
             </td>
             <td id="wb_mom_${r.id}" style="padding:8px 10px;border-bottom:1px solid var(--border);
                 text-align:right;font-family:var(--ff-mono);color:var(--text3)">-</td>
@@ -5478,9 +5698,10 @@ function syncWindToXWCalc() {
     return;
   }
 
-  // Navigate to xwind if not already there
+  // Navigate to the tools view / xwind sub-tab if not already there
   if(typeof App !== 'undefined' && App.nav) {
-    App.nav('xwind');
+    curToolsTab = 'xwind';
+    App.nav('tools');
   }
 
   // Push values into XW Calc fields (after a brief tick so the view renders)
@@ -5527,6 +5748,23 @@ function syncWindToXWCalc() {
  *   Aft limit      : 47.3 inches
  *   Max gross      : 2,550 lbs
  */
+let wbFuelUnit='lbs';
+
+function wbToggleFuelUnit(){
+  wbFuelUnit=wbFuelUnit==='lbs'?'gal':'lbs';
+  const input=document.getElementById('wb_fuel');
+  const label=document.getElementById('wbFuelLabel');
+  const btn=document.getElementById('wbFuelToggleBtn');
+  if(input){
+    const cur=parseFloat(input.value);
+    if(!isNaN(cur)&&cur>0) input.value=wbFuelUnit==='gal'?(cur/6).toFixed(1):(cur*6).toFixed(1);
+    input.placeholder=wbFuelUnit==='gal'?'gal — full = 49.7 gal':'lbs - full = 297.8';
+  }
+  if(label) label.textContent=`Fuel (Avgas${wbFuelUnit==='gal'?' gal':' 6 lbs/gal'})`;
+  if(btn) btn.textContent=wbFuelUnit==='gal'?'→ lbs':'→ gal';
+  calcWB();
+}
+
 function calcWB() {
   const profile = CHEROKEE_WB_PROFILE;
   const gaugeMin = 82;
@@ -5537,7 +5775,8 @@ function calcWB() {
   const stationRows = [];
 
   profile.stations.forEach(st => {
-    const raw = parseFloat(document.getElementById('wb_' + st.id)?.value || '');
+    let raw = parseFloat(document.getElementById('wb_' + st.id)?.value || '');
+    if(st.id==='fuel'&&wbFuelUnit==='gal'&&!isNaN(raw)&&raw>=0) raw=raw*6;
     const wt = isNaN(raw) || raw < 0 ? 0 : raw;
     const mom = wt * st.arm;
     stationRows.push({ ...st, weight: wt, moment: mom });
@@ -5837,96 +6076,7 @@ function calcPerformance() {
 }
 
 
-// â”€â”€â”€ TOOL CALCULATOR FUNCTIONS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-function e6bTab(id, btn){
-  document.querySelectorAll('#e6b-tabs .tool-tab').forEach(function(b){b.classList.remove('active');});
-  ['tsd','fuel','tas','wind'].forEach(function(p){
-    var el=document.getElementById('e6b-'+p);
-    if(el) el.style.display='none';
-  });
-  var panel=document.getElementById('e6b-'+id);
-  if(panel) panel.style.display='block';
-  if(btn) btn.classList.add('active');
-}
-function e6bSetResult(id, html2){
-  var el=document.getElementById(id);
-  if(!el) return;
-  el.innerHTML=html2;
-  el.style.display='block';
-}
-function e6bTSD(){
-  var d=parseFloat(document.getElementById('tsd_dist').value);
-  var g=parseFloat(document.getElementById('tsd_gs').value);
-  var t=parseFloat(document.getElementById('tsd_time').value);
-  var filled=[!isNaN(d),!isNaN(g),!isNaN(t)].filter(Boolean).length;
-  if(filled<2){document.getElementById('tsd_result').style.display='none';return;}
-  if(isNaN(t)&&d&&g){
-    var tm=d/g*60;
-    document.getElementById('tsd_time').value=tm.toFixed(1);
-    e6bSetResult('tsd_result','<span class="cr-label">Time</span><span class="cr-value">'+Math.floor(tm)+'h '+Math.round((tm%1)*60)+'m</span><span class="cr-label" style="margin-left:16px">= '+tm.toFixed(1)+' min</span>');
-  } else if(isNaN(d)&&g&&t){
-    var dist=g*t/60;
-    document.getElementById('tsd_dist').value=dist.toFixed(1);
-    e6bSetResult('tsd_result','<span class="cr-label">Distance</span><span class="cr-value">'+dist.toFixed(1)+' NM</span>');
-  } else if(isNaN(g)&&d&&t){
-    var gs=d/(t/60);
-    document.getElementById('tsd_gs').value=gs.toFixed(0);
-    e6bSetResult('tsd_result','<span class="cr-label">Groundspeed</span><span class="cr-value">'+gs.toFixed(0)+' kt</span>');
-  }
-}
-function e6bFuel(){
-  var t=parseFloat(document.getElementById('fuel_time').value);
-  var g=parseFloat(document.getElementById('fuel_gph').value);
-  var r=parseFloat(document.getElementById('fuel_res').value)||0;
-  if(isNaN(t)||isNaN(g)){document.getElementById('fuel_result').style.display='none';return;}
-  var trip=t*g;
-  var resGal=g*(r/60);
-  var total=trip+resGal;
-  e6bSetResult('fuel_result',
-    '<span class="cr-label">Trip</span><span class="cr-value">'+trip.toFixed(1)+' gal</span>'
-    +'<span class="cr-label" style="margin-left:14px">Reserve ('+r+' min)</span><span class="cr-value">'+resGal.toFixed(1)+' gal</span>'
-    +'<span class="cr-label" style="margin-left:14px">Total required</span><span class="cr-value" style="color:var(--amber)">'+total.toFixed(1)+' gal</span>');
-}
-function e6bTAS(){
-  var ias=parseFloat(document.getElementById('tas_ias').value);
-  var pa =parseFloat(document.getElementById('tas_pa').value);
-  var oat=parseFloat(document.getElementById('tas_oat').value);
-  if(isNaN(ias)||isNaN(pa)||isNaN(oat)){document.getElementById('tas_result').style.display='none';return;}
-  var pressRatio=Math.pow(Math.max(0.001, 1-6.8755e-6*pa), 5.2559);
-  var stdTempK=288.15-(0.001981*pa);
-  var actTempK=oat+273.15;
-  var densRatio=pressRatio*(stdTempK/actTempK);
-  var tas=ias/Math.sqrt(densRatio);
-  var da=pa+118.8*(oat-(15-(pa*0.001981)));
-  e6bSetResult('tas_result',
-    '<span class="cr-label">TAS</span><span class="cr-value">'+tas.toFixed(0)+' kt</span>'
-    +'<span class="cr-label" style="margin-left:14px">Density Alt</span><span class="cr-value">'+Math.round(da)+' ft</span>'
-    +'<span class="cr-label" style="margin-left:14px">TAS/IAS</span><span class="cr-value">'+(tas/ias).toFixed(3)+'</span>');
-}
-function e6bWCA(){
-  var tc  =parseFloat(document.getElementById('wca_tc').value);
-  var tas =parseFloat(document.getElementById('wca_tas').value);
-  var wdir=parseFloat(document.getElementById('wca_wdir').value);
-  var wspd=parseFloat(document.getElementById('wca_wspd').value);
-  if(isNaN(tc)||isNaN(tas)||isNaN(wdir)||isNaN(wspd)||tas<=0){
-    document.getElementById('wca_result').style.display='none';return;
-  }
-  var swt=wspd/tas;
-  if(Math.abs(swt)>1){e6bSetResult('wca_result','<span class="cr-label" style="color:var(--red)">Wind speed exceeds TAS - solution impossible</span>');return;}
-  var angleDiff=(wdir-tc+360)%360;
-  var ar=angleDiff*Math.PI/180;
-  var wca=Math.asin(swt*Math.sin(ar));
-  var th=((tc+wca*180/Math.PI)+360)%360;
-  var gs=tas*Math.cos(wca)-wspd*Math.cos(ar);
-  var hwc=wspd*Math.cos(ar);
-  var xwc=Math.abs(wspd*Math.sin(ar));
-  e6bSetResult('wca_result',
-    '<span class="cr-label">True Heading</span><span class="cr-value">'+th.toFixed(0)+'°</span>'
-    +'<span class="cr-label" style="margin-left:14px">WCA</span><span class="cr-value">'+(wca*180/Math.PI>0?'+':'')+(wca*180/Math.PI).toFixed(1)+'°</span>'
-    +'<span class="cr-label" style="margin-left:14px">Groundspeed</span><span class="cr-value">'+Math.max(0,gs).toFixed(0)+' kt</span>'
-    +'<br><span class="cr-label">'+(hwc>=0?'Headwind':'Tailwind')+'</span><span class="cr-value" style="color:'+(hwc>=0?'var(--green)':'var(--red)')+'">'+Math.abs(hwc).toFixed(0)+' kt</span>'
-    +'<span class="cr-label" style="margin-left:14px">Crosswind</span><span class="cr-value">'+xwc.toFixed(0)+' kt</span>');
-}
+// ─── TOOL CALCULATOR FUNCTIONS ───────────────────────────────────────
 function xwCalc(){
   var rwy =parseFloat(document.getElementById('xw_rwy').value);
   var wd  =parseFloat(document.getElementById('xw_wdir').value);
@@ -5994,11 +6144,7 @@ if(typeof window !== 'undefined'){
   window.syncWindToXWCalc  = syncWindToXWCalc;
   window.runGoNoGo         = runGoNoGo;
   window.calcWB            = calcWB;
-  window.e6bTab            = e6bTab;
-  window.e6bTSD            = e6bTSD;
-  window.e6bFuel           = e6bFuel;
-  window.e6bTAS            = e6bTAS;
-  window.e6bWCA            = e6bWCA;
+  window.wbToggleFuelUnit  = wbToggleFuelUnit;
   window.xwCalc            = xwCalc;
   window.xwSetRwy          = xwSetRwy;
   window.quickSearch       = quickSearch;

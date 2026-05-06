@@ -39,6 +39,10 @@
   <div class="logo">
     <div class="logo-mark">CHARLOTTE AVIATION</div>
     <div class="logo-sub">PPL Training Tracker</div>
+    <button class="sidebar-collapse-btn"
+            data-click-action="toggle-sidebar-collapse"
+            title="Collapse sidebar"
+            aria-label="Toggle sidebar">&#8249;</button>
   </div>
 
   <div class="stu-wrap">
@@ -50,7 +54,6 @@
   </div>
 
   <nav class="nav">
-    <!-- v3: Quick-search for ACS tasks and lessons -->
     <div class="sidebar-search-wrap">
       <input id="sidebarSearch"
              type="search"
@@ -74,44 +77,35 @@
     <div class="nav-item" data-view="lessons" data-click-action="nav-lessons">
       <span class="nav-icon">◧</span><span>Lessons</span>
     </div>
-    <div class="nav-item" data-view="requirements" data-click-action="nav">
-      <span class="nav-icon">§</span><span>§ 61.109 Reqs</span>
-    </div>
     <div class="nav-item" data-view="proficiency" data-click-action="nav">
       <span class="nav-icon">🔥</span><span>Proficiency Map</span>
     </div>
 
+    <div class="nav-sec">Aircraft</div>
     <div class="nav-item" data-view="procedures" data-click-action="nav">
-      <span class="nav-icon">≡</span><span>Aircraft Procedures</span>
+      <span class="nav-icon">≡</span><span>Procedures</span>
     </div>
-
     <div class="nav-item" data-view="poh" data-click-action="nav">
       <span class="nav-icon">POH</span><span>POH Reference</span>
     </div>
 
-    <div class="nav-sec">Tools</div>
-    <div class="nav-item" data-view="5p" data-click-action="nav">
-      <span class="nav-icon">✈</span><span>5P Pre-Flight</span>
-    </div>
-    <div class="nav-item" data-view="e6b" data-click-action="nav">
-      <span class="nav-icon">✦</span><span>E6-B Computer</span>
-    </div>
-    <div class="nav-item" data-view="xwind" data-click-action="nav">
-      <span class="nav-icon">⇌</span><span>Crosswind Calc</span>
-    </div>
-    <div class="nav-item" data-view="wx" data-click-action="nav">
-      <span class="nav-icon">☁</span><span>Weather Brief</span>
-    </div>
-    <!-- NEW v2: Weight & Balance calculator -->
-    <div class="nav-item" data-view="wb" data-click-action="nav">
-      <span class="nav-icon">⚖</span><span>Weight &amp; Balance</span>
-    </div>
-
-    <div class="nav-item" data-view="performance" data-click-action="nav">
-      <span class="nav-icon">PF</span><span>Performance</span>
-    </div>
-    <div class="nav-item" data-view="decision" data-click-action="nav">
-      <span class="nav-icon">&#9888;</span><span>Preflight Decision</span>
+    <div class="nav-sec">References</div>
+    <div class="nav-group" data-group="references">
+      <div class="nav-group-hd" data-click-action="toggle-nav-group" data-group="references">
+        <span style="font-family:var(--ff-mono);font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--text3)">References</span>
+        <span class="nav-group-arrow" style="font-size:14px;color:var(--text3)">›</span>
+      </div>
+      <div class="nav-group-items">
+        <div class="nav-item" data-view="requirements" data-click-action="nav">
+          <span class="nav-icon">§</span><span>§ 61.109 Reqs</span>
+        </div>
+        <div class="nav-item" data-view="presolo" data-click-action="nav">
+          <span class="nav-icon">✎</span><span>Pre-Solo Test</span>
+        </div>
+        <div class="nav-item" data-view="tools" data-click-action="nav">
+          <span class="nav-icon">⚙</span><span>Pilot Tools</span>
+        </div>
+      </div>
     </div>
 
     <div class="nav-sec">Output</div>
@@ -121,7 +115,6 @@
     <div class="nav-item" data-view="settings" data-click-action="nav">
       <span class="nav-icon">⚙</span><span>CFI Settings</span>
     </div>
-
   </nav>
 
   <div class="sidebar-foot">Charlotte Aviation · KJQF · Part 61</div>
