@@ -12,9 +12,9 @@
   --border:   #c4bc9a;
   --border2:  #a8a07e;
   /* Sectional MAGENTA — primary accent (replaces amber throughout) */
-  --amber:    #be185d;
-  --amber2:   #db2777;
-  --amber-dim:rgba(190,24,93,0.08);
+  --amber:    #4a5540;
+  --amber2:   #5a6b4f;
+  --amber-dim:rgba(74,85,64,0.10);
   /* Terrain/cleared green */
   --green:    #166534;
   --green2:   #15803d;
@@ -28,6 +28,15 @@
   --orange-dim:rgba(194,65,12,0.08);
   --purple:   #7c3aed;
   --purple-dim:rgba(109,40,217,0.08);
+  /* Olive green / earth tones — primary accent palette */
+  --olive:        #4a5540;
+  --olive2:       #5a6b4f;
+  --olive-light:  #7a9470;
+  --olive-dim:    rgba(74,85,64,0.10);
+  --earth-red:    #8b3a3a;
+  --earth-red-dim:rgba(139,58,58,0.10);
+  --earth-tan:    #b8956a;
+  --earth-tan-dim:rgba(184,149,106,0.15);
   /* Dark navy text — like aeronautical chart labels */
   --text:     #1a2744;
   --text2:    #2c3e6b;
@@ -339,14 +348,14 @@ body.student-mode .performance-actions [data-view="decision"]{display:none!impor
 .grade-btn:active{transform:scale(.97)}
 .grade-btn.active-U{background:var(--red);border-color:var(--red);color:#fff;animation:gradePulse .35s ease}
 .grade-btn.active-M{background:var(--orange);border-color:var(--orange);color:#fff;animation:gradePulse .35s ease}
-.grade-btn.active-S{background:var(--amber);border-color:var(--amber);color:#fff;animation:gradePulse .35s ease}
-.grade-btn.active-G{background:var(--blue);border-color:var(--blue);color:#fff;animation:gradePulse .35s ease}
+.grade-btn.active-S{background:var(--earth-tan);border-color:var(--earth-tan);color:#1a2744;animation:gradePulse .35s ease}
+.grade-btn.active-G{background:var(--olive);border-color:var(--olive);color:#fff;animation:gradePulse .35s ease}
 .grade-btn.active-E{background:var(--green);border-color:var(--green);color:#fff;animation:gradePulse .35s ease}
 .grade-lbl{font-family:var(--ff-mono);font-size:10px;color:var(--text3);margin-right:3px;white-space:nowrap}
 @keyframes gradePulse{0%{transform:scale(1)}40%{transform:scale(1.18)}100%{transform:scale(1)}}
 .grade-btn.active-M{background:var(--orange-dim);border-color:var(--orange);color:var(--orange)}
-.grade-btn.active-S{background:var(--amber-dim);border-color:var(--amber);color:var(--amber)}
-.grade-btn.active-G{background:var(--blue-dim);border-color:var(--blue);color:var(--blue)}
+.grade-btn.active-S{background:var(--earth-tan-dim);border-color:var(--earth-tan);color:var(--earth-tan)}
+.grade-btn.active-G{background:var(--olive-dim);border-color:var(--olive);color:var(--olive)}
 .grade-btn.active-E{background:var(--green-dim);border-color:var(--green);color:var(--green)}
 .grade-lbl{font-family:var(--ff-mono);font-size:10px;color:var(--text3);margin-right:3px;white-space:nowrap}
 
@@ -926,7 +935,7 @@ body.dark-theme {
   --border2:   #52443c;
 
   /* Magenta accent — matches light theme, legible on dark bg */
-  --amber:     #db2777;
+  --amber:     #7a9470;
   --amber2:    #ec4899;
   --amber-dim: rgba(219,39,119,0.15);
 
