@@ -2071,7 +2071,7 @@ function parseRouteState(search, validStudentIds=[]) {
   const studentId = validStudentIds.includes(params.get('student')) ? params.get('student') : null;
   const lessonId = params.get('lesson');
   const hasLesson = !!(lessonId && (GL[lessonId] || FL[lessonId]));
-  const tab = hasLesson && VALID_LESSON_TABS.has(params.get('tab')) ? params.get('tab') : 'tasks';
+  const tab = hasLesson && VALID_LESSON_TABS.has(params.get('tab')) ? params.get('tab') : 'fly';
   const phase = VALID_PHASES.has(params.get('phase')) ? params.get('phase') : 'presolo';
   return {
     view: view === 'lesson' && !hasLesson ? 'lessons' : view,
@@ -2174,7 +2174,7 @@ const App={
     curView=studentSafeView(v);
     if(lid){
       curLesson=lid;
-      if(!options.preserveTab) curTab=isStudentMode()?'homework':'tasks';
+      if(!options.preserveTab) curTab=isStudentMode()?'homework':'fly';
       curHomeworkView=isStudentMode() ? 'digital' : 'print';
       expandedTasks={};
     }
@@ -3502,7 +3502,7 @@ const V={
   lessonTab(lid,s,tab){
     tab=studentSafeLessonTab(tab);
     const _lesson=GL[lid]||FL[lid];
-    if(tab==='stagecheck'&&!(_lesson?.isStageCheck||_lesson?.isEndOfCourse)) tab='tasks';
+    if(tab==='stagecheck'&&!(_lesson?.isStageCheck||_lesson?.isEndOfCourse)) tab='fly';
     switch(tab){
       case 'tasks':      return this.tabTasks(lid,s);
       case 'objectives':  return this.tabObjectives(lid,s);
@@ -3958,7 +3958,7 @@ ${lesson.isStageCheck?'<div style="font-family:var(--ff-mono);font-size:10px;col
       const hw = H.homeworkData(lid,s);
       if(!hw) return '<div class="alert alert-warn">Homework is not available for this lesson.</div>';
       const printActive = curHomeworkView !== 'digital';
-      const backTab = isStudentMode() ? 'objectives' : 'tasks';
+      const backTab = isStudentMode() ? 'objectives' : 'fly';
       const backLabel = isStudentMode() ? 'Brief' : 'Back to Lesson';
       return `
       <div class="hw-shell">
