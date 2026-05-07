@@ -1,7 +1,7 @@
 ﻿// ============================================================
-// Charlotte Aviation PPL Tracker â€” app.js
+// Charlotte Aviation PPL Tracker -- app.js
 // ============================================================
-// PART 1 â€” Import Â· State Â· Persistence Hook Â· Dark Mode Â· Mobile Nav
+// PART 1 -- Import · State · Persistence Hook · Dark Mode · Mobile Nav
 // ============================================================
 
 import {
@@ -26,7 +26,7 @@ import {
   pohSourceHref
 } from './poh-reference.js';
 
-// â”€â”€â”€ STORE KEYS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// --- STORE KEYS -------------------------------------------------------
 // HANDBOOK CHAPTER LINKS
 // Both PHAK and AFH are published as a "full PDF" plus per-chapter PDFs.
 // Linking to per-chapter PDFs avoids #page=N math against the full book —
@@ -261,13 +261,13 @@ const POH_CHECKLISTS = [
     ]},
 ];
 
-const STORE     = 'charlotteaviation_v1'; // â† bump version here on schema changes
+const STORE     = 'charlotteaviation_v1'; // <- bump version here on schema changes
 const CFI_STORE = 'charlotteaviation_cfi';
 const DARK_STORE     = 'charlotteaviation_darkmode';
 const COLLAPSE_STORE = 'charlotteaviation_sidebar_collapsed';
 const PRESOLO_STORE_PREFIX = 'charlotteaviation_presolo_'; // + studentId — mid-test snapshot
 
-// â”€â”€â”€ CFI PROFILE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// --- CFI PROFILE ------------------------------------------------------
 let cfiProfile = (()=>{
   try { const r=localStorage.getItem(CFI_STORE); if(r) return JSON.parse(r); }
   catch(e){}
@@ -298,7 +298,7 @@ function normalizeStateShape(raw) {
   return { ...raw, students, activeId };
 }
 
-// â”€â”€â”€ PERSISTENCE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// --- PERSISTENCE ------------------------------------------------------
 // Loads saved state from localStorage on startup.
 let state = (()=>{
   try {
@@ -310,10 +310,10 @@ let state = (()=>{
 })();
 
 /**
- * save() â€” persists the current state object.
+ * save() -- persists the current state object.
  *
  * BACKEND HOOK (Phase 2):
- * â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+ * ---------------------------------------------------------------------
  * When you are ready to switch from localStorage to a cloud backend,
  * replace (or supplement) the localStorage.setItem call below with
  * your sync call. Example patterns:
@@ -327,14 +327,14 @@ let state = (()=>{
  *   await supabase.from('tracker_state')
  *                 .upsert({ user_id: authUser.id, payload: state });
  *
- * You may want to debounce this call (300â€“500 ms) to avoid hammering
+ * You may want to debounce this call (300"“500 ms) to avoid hammering
  * the API on rapid checkbox interactions. A simple debounce wrapper:
  *
  *   const save = debounce(_save, 400);
  *   function _save() { ... }
  *
  * Until then, localStorage is the source of truth.
- * â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+ * ---------------------------------------------------------------------
  */
 function save() {
   try {
@@ -371,7 +371,7 @@ function loadPresoloTest(studentId) {
   } catch(e) { return null; }
 }
 
-// â”€â”€â”€ STATE ACCESSORS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// --- STATE ACCESSORS --------------------------------------------------
 function getS()  { return state.students.find(s => s.id === state.activeId) || null; }
 
 function initSD(s) {
@@ -432,7 +432,7 @@ function debriefList(value) {
     .filter(Boolean);
 }
 
-// â”€â”€â”€ DARK MODE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// --- DARK MODE --------------------------------------------------------
 function toggleDarkMode() {
   const isDark = document.body.classList.toggle('dark-theme');
   try { localStorage.setItem(DARK_STORE, isDark ? '1' : '0'); } catch(e){}
@@ -495,9 +495,9 @@ function initSidebarCollapse() {
   } catch(e) {}
 }
 
-// â”€â”€â”€ MOBILE NAV â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// --- MOBILE NAV -------------------------------------------------------
 /**
- * toggleMobileNav() â€” driven by a hamburger button you place in the
+ * toggleMobileNav() -- driven by a hamburger button you place in the
  * topbar HTML for screens < 700px.  The sidebar slides in/out via a
  * CSS class. Add to styles.css:
  *
@@ -531,7 +531,7 @@ function closeMobileNav() {
 function navLessons()          { closeMobileNav(); App.nav('lessons'); }
 function nav5PSession(key)     { closeMobileNav(); curToolsTab='5p'; App.nav('tools'); }
 
-// â”€â”€â”€ SIDEBAR QUICK-SEARCH â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// --- SIDEBAR QUICK-SEARCH ---------------------------------------------
 /**
  * quickSearch(query)
  * Searches all GL/FL lesson IDs, titles, and ACS task refs.
@@ -874,7 +874,7 @@ function bindEventActions() {
 
 
 
-// â”€â”€â”€ HELPERS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// --- HELPERS ----------------------------------------------------------
 const H={
   statusLabel(status){
     return {
@@ -2344,7 +2344,7 @@ function lessonTypeLabel(lesson) {
 }
 
 
-// â”€â”€â”€ APP â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// --- APP --------------------------------------------------------------
 let curView='dashboard',curLesson=null,curTab='tasks',curHomeworkView='print',expandedTasks={},curPhase='presolo',curProcedureCategory='all',curProcedureSearch='',curProcedureId=null,curProcedureSection='checklists',curPohCategory='all',curPohSearch='',curPohId=null,appMode='instructor';
 let curToolsTab='xwind';
 let pohCheckState = {}; // transient Aircraft → Checklists state (cleared on reload)
@@ -3239,7 +3239,7 @@ const App={
     this.copyTextToClipboard(H.homeworkStudentMessage(hw), btn, 'Copy Student Message');
   },
 
-  // â”€â”€ v3: Endorsement Helper â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // -- v3: Endorsement Helper ------------------------------------------
   copyEndorsement(reqId){
     const s=getS();if(!s)return;
 
@@ -3267,7 +3267,7 @@ const App={
     this.copyTextToClipboard(text, btn, 'Generate Endorsement');
   },
 
-  // â”€â”€ v3: Save Personal Minimums â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // -- v3: Save Personal Minimums --------------------------------------
   savePersonalMins(){
     const s=getS();if(!s)return;
     const d=initSD(s);
@@ -4100,7 +4100,7 @@ const V={
       ?tolEntries.map(([k,v])=>`<div style="text-align:center;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:9px 14px"><div style="font-family:var(--ff-mono);font-size:10px;color:var(--text3);text-transform:uppercase;margin-bottom:2px">${k}</div><div style="font-family:var(--ff-display);font-size:20px;letter-spacing:1px;color:var(--amber)">${v}</div></div>`).join('')
       :`<div style="font-family:var(--ff-mono);font-size:12px;color:var(--text2);padding:8px 0">ACS Completion Standard - all knowledge areas demonstrated to evaluator satisfaction</div>`;
 
-    // Objective summary â€” one sentence per task
+    // Objective summary -- one sentence per task
     const objectives=lesson.tasks.map(t=>t.text);
 
     // What-if items
@@ -4149,7 +4149,7 @@ const V={
         ${isFL&&lesson.isSolo?`<div style="font-family:var(--ff-mono);font-size:11px;color:var(--blue);margin-top:7px;padding:7px 10px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:var(--r)">Solo flight - student demonstrates autonomous PIC decision-making. No instructor intervention.</div>`:''}
     </div>
 
-    <!-- WHAT IF â€” SRM DISCUSSION STARTERS -->
+    <!-- WHAT IF -- SRM DISCUSSION STARTERS -->
     ${whatIf.length>0?`
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap">
       <span style="background:var(--red);color:#fff;border-radius:3px;padding:3px 10px;font-family:var(--ff-mono);font-size:10px;font-weight:700;letter-spacing:1px">WHAT IF?</span>
@@ -5446,7 +5446,7 @@ Live browser fetch is disabled because Aviation Weather Center blocks cross-orig
     </div>`;
   },
 
-  // â”€â”€ v3: ACS PROFICIENCY HEATMAP â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // -- v3: ACS PROFICIENCY HEATMAP ------------------------------------
   proficiency(s){
     if(!s)return`<div class="empty"><div class="empty-icon">&#128293;</div><div class="empty-title">NO STUDENT SELECTED</div><div class="empty-txt">Select a student to view their ACS proficiency heatmap.</div></div>`;
 
@@ -6248,7 +6248,7 @@ function syncWindToXWCalc() {
 }
 
 
-// â”€â”€â”€ W&B CALCULATOR â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// --- W&B CALCULATOR ---------------------------------------------------
 /**
  * calcWB()
  *
@@ -6648,7 +6648,7 @@ function xwSetRwy(hdg){
 }
 
 
-// â”€â”€â”€ WINDOW EXPORTS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// --- WINDOW EXPORTS ---------------------------------------------------
 // Kept for compatibility with any external callers or console-driven use.
 // ES modules are deferred by default, so the DOM is fully parsed by
 // the time this code runs.
@@ -6673,9 +6673,9 @@ if(typeof window !== 'undefined'){
   window.wxChip            = wxChip;
 }
 
-// â”€â”€â”€ BOOT â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// --- BOOT -------------------------------------------------------------
 // ES modules execute AFTER DOMContentLoaded has already fired, so
-// the DOM is guaranteed ready here. Call App.init() directly â€”
+// the DOM is guaranteed ready here. Call App.init() directly --
 // do NOT wrap in DOMContentLoaded (that event is already past and
 // the listener would never fire).
 if(typeof document !== 'undefined'){
