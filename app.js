@@ -6628,6 +6628,19 @@ function calcPerformance() {
     if (windKt < 0) return Math.min(2.0, 1 + Math.abs(windKt) * 0.05);
     return 1.0;
   })();
+  // DA-adjusted climb rate (POH SL gross 660 fpm; lose ~75 fpm per 1000 ft DA above field)
+  const fieldElev = readNumber('perf_field_elev') || 705;
+  const baseClimb = 660;
+  const daAboveField = data.densityAltitude !== null
+    ? Math.max(0, data.densityAltitude - fieldElev)
+    : null;
+  const adjustedClimb = daAboveField !== null
+    ? Math.max(100, Math.round(baseClimb - (daAboveField / 1000) * 75))
+    : null;
+  const climbDisplay = adjustedClimb !== null
+    ? `~${adjustedClimb} fpm at current DA`
+    : '~700 fpm (set OAT for DA-adjusted estimate)';
+
   const takeoffFactor = daFactor(data.densityAltitude) * weightFactor(currentWeight) * surfaceFactor(document.getElementById('perf_surface')?.value || '') * windFactor;
   const landingFactor = daFactor(data.densityAltitude) * weightFactor(currentWeight) * surfaceFactor(document.getElementById('perf_surface')?.value || '') * windFactor;
   const estimatedTakeoffGround = Math.round(PERFORMANCE_BASELINE.takeoff.ground * takeoffFactor);
@@ -6730,7 +6743,7 @@ function calcPerformance() {
         <div class="performance-baseline-list">
           <div class="performance-baseline-row"><span class="performance-baseline-row-label">Takeoff</span><span class="performance-baseline-row-values">~800 ft ground roll | ~1,200-1,700 ft over 50 ft</span></div>
           <div class="performance-baseline-row"><span class="performance-baseline-row-label">Landing</span><span class="performance-baseline-row-values">~500 ft ground roll | ~850 ft over 50 ft</span></div>
-          <div class="performance-baseline-row"><span class="performance-baseline-row-label">Climb</span><span class="performance-baseline-row-values">~700 fpm</span></div>
+          <div class="performance-baseline-row"><span class="performance-baseline-row-label">Climb</span><span class="performance-baseline-row-values">${climbDisplay}</span></div>
           <div class="performance-baseline-row"><span class="performance-baseline-row-label">Cruise</span><span class="performance-baseline-row-values">~110 KTAS</span></div>
         </div>
       </div>
