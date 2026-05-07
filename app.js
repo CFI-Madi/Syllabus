@@ -2482,6 +2482,13 @@ const App={
       if(lpb)lpb.style.width=lp.pct+'%';
       if(lpp)lpp.textContent=lp.done+'/'+lp.total+' tasks';
     }
+    // Re-render the Fly tab content so the new visual checkbox square,
+    // checklist counter, and progress dots reflect the new state.
+    // (Other tabs use surgical badge updates above.)
+    if(curView==='lesson' && curTab==='fly' && curLesson===lid){
+      const tc=document.getElementById('tabContent');
+      if(tc) tc.innerHTML = V.lessonTab(curLesson, s, 'fly');
+    }
   },
   setTaskStatus(lid,tid,status){
     const s=getS();if(!s)return;
