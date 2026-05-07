@@ -6194,19 +6194,22 @@ function runGoNoGo() {
   const ceilMatch = metarRaw.match(/\b(?:BKN|OVC)(\d{3})\b/);
   const parsedCeil = ceilMatch ? parseInt(ceilMatch[1]) * 100 : null;
 
-  // --- Crosswind for KJQF Rwy 02 (020°) and Rwy 20 (200°). Pick favored runway.
+  // --- KJQF Rwy 02 (020°) / Rwy 20 (200°). Favored runway = positive headwind.
+  // Crosswind magnitude is identical against opposite runways, so headwind is the
+  // correct selection criterion.
   let xw = null;
   let favoredRwy = null;
+  let favoredHw = null;
   if(wind && wind.dir !== 'VRB' && wind.speed > 0) {
-    const rwyXw = (rwyHdg, windDir, windSpd) => {
-      const angle = ((windDir - rwyHdg + 540) % 360) - 180;
-      return Math.abs(windSpd * Math.sin(angle * Math.PI / 180));
-    };
+    const relAngle = (rwyHdg, windDir) => ((windDir - rwyHdg + 540) % 360) - 180;
     const dir = parseInt(wind.dir);
-    const xw02 = rwyXw(20, dir, wind.speed);
-    const xw20 = rwyXw(200, dir, wind.speed);
-    favoredRwy = xw02 <= xw20 ? '02' : '20';
-    xw = Math.min(xw02, xw20);
+    const spd = wind.speed;
+    const hw02 = spd * Math.cos(relAngle(20,  dir) * Math.PI / 180);
+    const hw20 = spd * Math.cos(relAngle(200, dir) * Math.PI / 180);
+    favoredRwy = hw02 >= hw20 ? '02' : '20';
+    favoredHw = favoredRwy === '02' ? hw02 : hw20;
+    const favoredHdg = favoredRwy === '02' ? 20 : 200;
+    xw = Math.abs(spd * Math.sin(relAngle(favoredHdg, dir) * Math.PI / 180));
   }
 
   function item(label, icon, actual, min, unit, isMin=false, fmt=null) {
@@ -6252,6 +6255,7 @@ function runGoNoGo() {
       <span style="font-family:var(--ff-display);font-size:24px;letter-spacing:2px">${overallStatus}</span>
       <span style="font-family:var(--ff-mono);font-size:11px;opacity:.85">${s.name}'s conditions vs personal minimums | ${new Date().toLocaleTimeString()}</span>
     </div>
+    ${favoredRwy !== null ? `<div style="font-family:var(--ff-mono);font-size:11px;color:var(--text2);background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:6px 12px;margin-bottom:10px">Favored runway: KJQF Rwy ${favoredRwy} · HW ${Math.round(favoredHw)} kt · XW ${xw.toFixed(1)} kt</div>` : ''}
     <div class="gonogo-grid">${items.join('')}</div>
     ${pendingCount > 0 ? `<div style="font-family:var(--ff-mono);font-size:10px;color:var(--text3);margin-top:8px">Warning: ${pendingCount} item(s) pending | use the official METAR link to check all conditions.</div>` : ''}`;
 }
