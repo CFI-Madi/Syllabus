@@ -1404,7 +1404,8 @@ const H={
       readings.push({src:'PHAK',title:`Chapter ${n}${PHAK_CH[n] ? ' - ' + PHAK_CH[n] : ''}`,url:phakChapterUrl(n),color:'var(--amber)'});
     });
     Array.from(afhSeen).sort((a,b)=>a-b).forEach(function(n){
-      readings.push({src:'AFH',title:`Chapter ${n}${AFH_CH[n] ? ' - ' + AFH_CH[n] : ''}`,url:afhChapterUrl(n),color:'var(--blue)'});
+      const afhDisplayN=AFH_CH_REMAP[n]||n;
+      readings.push({src:'AFH',title:`Chapter ${afhDisplayN}${AFH_CH[n] ? ' - ' + AFH_CH[n] : ''}`,url:afhChapterUrl(n),color:'var(--blue)'});
     });
     if(aimSeen.size) readings.push({src:'AIM',title:'Aeronautical Information Manual',url:REF_URLS.AIM,color:'var(--green)'});
     Array.from(cfrSeen).sort().forEach(function(code){
@@ -3633,7 +3634,7 @@ const V={
           <div style="display:flex;gap:6px;flex-wrap:wrap;padding:8px 14px;border-bottom:1px solid var(--border)">
             ${acsCode?`<a href="${acsHref}" target="_blank" class="acs-tag">ACS ${acsCode}</a>`:''}
             ${phakMatch?`<a href="${phakHref}" target="_blank" class="task-ref" style="text-decoration:none;color:var(--blue)">PHAK Ch.${phakChNum}</a>`:''}
-            ${afhMatch?`<a href="${afhHref}" target="_blank" class="task-ref" style="text-decoration:none;color:var(--blue)">AFH Ch.${afhChNum}</a>`:''}
+            ${afhMatch?`<a href="${afhHref}" target="_blank" class="task-ref" style="text-decoration:none;color:var(--blue)">AFH Ch.${AFH_CH_REMAP[afhChNum]||afhChNum}</a>`:''}
             ${aimMatch?`<a href="${REF_URLS.AIM}" target="_blank" class="task-ref" style="text-decoration:none;color:var(--blue)">AIM</a>`:''}
             ${textRef&&!phakMatch&&!afhMatch&&!aimMatch?`<span class="task-ref">${textRef}</span>`:''}
           </div>`:''}
