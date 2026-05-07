@@ -6513,7 +6513,7 @@ function calcPerformance() {
   const landingModifiers = data.landing.modifiers.length ? data.landing.modifiers : ['No major modifier flagged'];
   const currentWeight = data.wb?.hasLoadData ? data.wb.totalWeight : null;
   const takeoffFactor = daFactor(data.densityAltitude) * weightFactor(currentWeight) * surfaceFactor(document.getElementById('perf_surface')?.value || '');
-  const landingFactor = daFactor(data.densityAltitude) * surfaceFactor(document.getElementById('perf_surface')?.value || '');
+  const landingFactor = daFactor(data.densityAltitude) * weightFactor(currentWeight) * surfaceFactor(document.getElementById('perf_surface')?.value || '');
   const estimatedTakeoffGround = Math.round(PERFORMANCE_BASELINE.takeoff.ground * takeoffFactor);
   const estimatedTakeoff50 = Math.round(PERFORMANCE_BASELINE.takeoff.over50 * takeoffFactor);
   const estimatedLandingGround = Math.round(PERFORMANCE_BASELINE.landing.ground * landingFactor);
