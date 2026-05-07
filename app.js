@@ -265,6 +265,7 @@ const STORE     = 'charlotteaviation_v1'; // â† bump version here on schema
 const CFI_STORE = 'charlotteaviation_cfi';
 const DARK_STORE     = 'charlotteaviation_darkmode';
 const COLLAPSE_STORE = 'charlotteaviation_sidebar_collapsed';
+const PRESOLO_STORE_PREFIX = 'charlotteaviation_presolo_'; // + studentId — mid-test snapshot
 
 // â”€â”€â”€ CFI PROFILE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 let cfiProfile = (()=>{
@@ -338,10 +339,36 @@ let state = (()=>{
 function save() {
   try {
     localStorage.setItem(STORE, JSON.stringify(state));
-    // â”€â”€ BACKEND HOOK: replace/supplement line above with cloud sync â”€â”€
+    // -- BACKEND HOOK: replace/supplement line above with cloud sync --
   } catch(e) {
     console.warn('[Charlotte Aviation] save() failed:', e);
   }
+}
+
+// --- PRE-SOLO TEST PERSISTENCE -----------------------------------
+// Mid-test progress (curPresoloTest) snapshot in localStorage so a
+// browser refresh / iOS Safari page eviction doesn't lose 18+ minutes
+// of work. Keyed by studentId so two students on the same device
+// don't see each other's in-progress test.
+function savePresoloTest(studentId, questions) {
+  try {
+    localStorage.setItem(
+      PRESOLO_STORE_PREFIX + studentId,
+      JSON.stringify({ studentId, questions, savedAt: Date.now() })
+    );
+  } catch(e) {}
+}
+function clearPresoloTest(studentId) {
+  try { localStorage.removeItem(PRESOLO_STORE_PREFIX + studentId); } catch(e) {}
+}
+function loadPresoloTest(studentId) {
+  try {
+    const raw = localStorage.getItem(PRESOLO_STORE_PREFIX + studentId);
+    if (!raw) return null;
+    const data = JSON.parse(raw);
+    if (data.studentId !== studentId || !Array.isArray(data.questions) || !data.questions.length) return null;
+    return data.questions;
+  } catch(e) { return null; }
 }
 
 // â”€â”€â”€ STATE ACCESSORS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -694,13 +721,46 @@ function handleClickAction(el, event) {
       case 'toggle-topnav-more':
         document.getElementById('topnavMore')?.classList.toggle('open');
         break;
-      case 'start-presolo-test': curPresoloTest=buildPresoloQuestions(); console.log('[presolo] test started, questions:',curPresoloTest.length); App.render(); document.getElementById('content')?.scrollTo(0,0); break;
-      case 'cancel-presolo-test': curPresoloTest=null; App.render(); break;
+      case 'start-presolo-test': {
+        const _s = getS();
+        curPresoloTest = buildPresoloQuestions();
+        curPresoloTestWasRestored = false;
+        if (_s) savePresoloTest(_s.id, curPresoloTest);
+        App.render();
+        document.getElementById('content')?.scrollTo(0, 0);
+        break;
+      }
+      case 'cancel-presolo-test': {
+        const _s = getS();
+        curPresoloTest = null;
+        curPresoloTestWasRestored = false;
+        if (_s) clearPresoloTest(_s.id);
+        App.render();
+        break;
+      }
       case 'mark-presolo-q': {
-        const idx=parseInt(el.dataset.idx,10);
-        const val=el.dataset.val==='pass';
-        if(curPresoloTest) curPresoloTest[idx].pass=curPresoloTest[idx].pass===val?null:val;
-        App.render(); break;
+        const idx = parseInt(el.dataset.idx, 10);
+        const val = el.dataset.val === 'pass';
+        if (curPresoloTest) {
+          curPresoloTest[idx].pass = curPresoloTest[idx].pass === val ? null : val;
+          const _s = getS();
+          if (_s) savePresoloTest(_s.id, curPresoloTest);
+        }
+        App.render();
+        break;
+      }
+      case 'start-presolo-resume': {
+        // Restore happens in the render switch when we navigate to presolo.
+        App.nav('presolo');
+        break;
+      }
+      case 'start-presolo-discard': {
+        const _s = getS();
+        if (_s) clearPresoloTest(_s.id);
+        curPresoloTest = null;
+        curPresoloTestWasRestored = false;
+        App.render();
+        break;
       }
       case 'submit-presolo-test': App.submitPresoloTest(); break;
       case 'tools-tab':
@@ -2289,6 +2349,11 @@ let curView='dashboard',curLesson=null,curTab='tasks',curHomeworkView='print',ex
 let curToolsTab='xwind';
 let pohCheckState = {}; // transient Aircraft → Checklists state (cleared on reload)
 let curPresoloTest=null;
+// True only when curPresoloTest was hydrated from localStorage on a render-switch
+// pass. Reset to false on start/cancel/submit. Drives the "Resuming saved test"
+// indicator so it appears once after a refresh, not on every render of an
+// in-progress test.
+let curPresoloTestWasRestored = false;
 let isApplyingRoute = false;
 const VIEWS={dashboard:'DASHBOARD',students:'STUDENTS',lessons:'LESSONS',requirements:'SEC. 61.109 REQUIREMENTS',reports:'REPORTS',settings:'SETTINGS',tools:'PILOT TOOLS',presolo:'PRE-SOLO KNOWLEDGE TEST',lesson:'LESSON',proficiency:'ACS PROFICIENCY HEATMAP',procedures:'AIRCRAFT',poh:'AIRCRAFT'};
 const VALID_LESSON_TABS = new Set(['tasks','objectives','scenario','instructor','srm','debrief','homework','stagecheck','plan','fly']);
@@ -2545,7 +2610,18 @@ const App={
         break;
       case 'lesson':       el.innerHTML=V.lessonDetail(curLesson,s);
         ta.innerHTML=`<button class="btn btn-ghost btn-sm" data-click-action="nav-lessons">&larr; Back</button>`;break;
-      case 'presolo':      try{el.innerHTML=V.presolo(s);}catch(e){console.error('presolo render error',e);el.innerHTML=`<div class="alert alert-danger">Render error: ${e.message}</div>`;}break;
+      case 'presolo':
+        // Restore mid-test snapshot if a refresh wiped the in-memory state.
+        if (!curPresoloTest && s) {
+          const _restored = loadPresoloTest(s.id);
+          if (_restored) {
+            curPresoloTest = _restored;
+            curPresoloTestWasRestored = true;
+          }
+        }
+        try { el.innerHTML = V.presolo(s); }
+        catch(e) { console.error('presolo render error', e); el.innerHTML = `<div class="alert alert-danger">Render error: ${e.message}</div>`; }
+        break;
       case 'proficiency':  el.innerHTML=V.proficiency(s);break;
       case 'procedures':   el.innerHTML=V.procedures(s);break;
       case 'poh': // merged into Aircraft tab — redirect to Systems section
@@ -3078,6 +3154,8 @@ const App={
     s.data.presoloTests.unshift(record);
     save();
     curPresoloTest=null;
+    curPresoloTestWasRestored = false;
+    clearPresoloTest(s.id);
     this.render();
   },
 
@@ -5227,79 +5305,98 @@ Live browser fetch is disabled because Aviation Weather Center blocks cross-orig
 
   // ── PRE-SOLO KNOWLEDGE TEST ──────────────────────────────────────────────
   presolo(s){
-    if(!s) return`<div class=”empty”><div class=”empty-icon”>&#9998;</div><div class=”empty-title”>NO STUDENT SELECTED</div><div class=”empty-txt”>Select a student to administer the §61.87(b) pre-solo written test.</div></div>`;
+    if(!s) return`<div class="empty"><div class="empty-icon">&#9998;</div><div class="empty-title">NO STUDENT SELECTED</div><div class="empty-txt">Select a student to administer the §61.87(b) pre-solo written test.</div></div>`;
 
     const tests=s.data?.presoloTests||[];
     const best=tests.length?Math.max(...tests.map(t=>t.pct)):null;
     const everPassed=tests.some(t=>t.passed);
 
-    // ── Test in progress ──
+    // -- Test in progress --
     if(curPresoloTest){
       const total=curPresoloTest.length;
       const marked=curPresoloTest.filter(q=>q.pass!==null).length;
       const passCount=curPresoloTest.filter(q=>q.pass===true).length;
+      const showResumed = curPresoloTestWasRestored && marked > 0;
       const questions=curPresoloTest.map((item,i)=>{
         const passActive=item.pass===true;
         const failActive=item.pass===false;
-        return`<div class=”psq-card${passActive?' psq-pass':failActive?' psq-fail':''}”>
-          <div class=”psq-meta”>
-            <span class=”psq-num”>${String(i+1).padStart(2,'0')}</span>
-            <span class=”psq-source”>${item.lessonId} &middot; ${item.lessonTitle}</span>
+        return`<div class="psq-card${passActive?' psq-pass':failActive?' psq-fail':''}">
+          <div class="psq-meta">
+            <span class="psq-num">${String(i+1).padStart(2,'0')}</span>
+            <span class="psq-source">${item.lessonId} &middot; ${item.lessonTitle}</span>
           </div>
-          <div class=”psq-text”>${item.q}</div>
-          <div class=”psq-actions”>
-            <button class=”psq-btn psq-btn-pass${passActive?' active':''}” data-click-action=”mark-presolo-q” data-idx=”${i}” data-val=”pass”>&#10003; Pass</button>
-            <button class=”psq-btn psq-btn-fail${failActive?' active':''}” data-click-action=”mark-presolo-q” data-idx=”${i}” data-val=”fail”>&#10007; Fail</button>
+          <div class="psq-text">${item.q}</div>
+          <div class="psq-actions">
+            <button class="psq-btn psq-btn-pass${passActive?' active':''}" data-click-action="mark-presolo-q" data-idx="${i}" data-val="pass">&#10003; Pass</button>
+            <button class="psq-btn psq-btn-fail${failActive?' active':''}" data-click-action="mark-presolo-q" data-idx="${i}" data-val="fail">&#10007; Fail</button>
           </div>
         </div>`;
       }).join('');
-      return`<div class=”psq-header”>
+      return`<div class="psq-header">
         <div>
-          <div class=”psq-title-row”>
-            <span class=”psq-badge”>§ 61.87(b)</span>
-            <span class=”psq-student”>${s.name}</span>
+          <div class="psq-title-row">
+            <span class="psq-badge">§ 61.87(b)</span>
+            <span class="psq-student">${s.name}</span>
           </div>
-          <div class=”psq-progress-label”>${marked} of ${total} marked &middot; ${passCount} passing</div>
+          <div class="psq-progress-label">${marked} of ${total} marked &middot; ${passCount} passing</div>
+          ${showResumed ? `<div style="font-family:var(--ff-mono);font-size:10px;color:var(--olive);margin-top:3px">↩ Resuming saved test</div>` : ''}
         </div>
-        <div style=”display:flex;gap:8px”>
-          <button class=”btn btn-ghost btn-sm” data-click-action=”cancel-presolo-test”>Cancel</button>
-          <button class=”btn btn-primary btn-sm” data-click-action=”submit-presolo-test”>Submit Test</button>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-ghost btn-sm" data-click-action="cancel-presolo-test">Cancel</button>
+          <button class="btn btn-primary btn-sm" data-click-action="submit-presolo-test">Submit Test</button>
         </div>
       </div>
-      <div class=”psq-progress-bar”><div class=”psq-progress-fill” style=”width:${total?Math.round(marked/total*100):0}%”></div></div>
-      <div class=”psq-list”>${questions}</div>`;
+      <div class="psq-progress-bar"><div class="psq-progress-fill" style="width:${total?Math.round(marked/total*100):0}%"></div></div>
+      <div class="psq-list">${questions}</div>`;
     }
 
-    // ── Intro / history screen ──
+    // -- Intro / history screen --
     const qTotal=PRESOLO_SOURCE_LESSONS.reduce((n,lid)=>n+(GL[lid]?.debrief?.length||0),0);
     const historyRows=tests.slice(0,5).map(t=>`
-      <div class=”psq-hist-row”>
-        <span class=”psq-hist-date”>${t.date}</span>
-        <span class=”psq-hist-score”>${t.score}/${t.total}</span>
-        <span class=”psq-hist-pct”>${t.pct}%</span>
-        <span class=”psq-hist-result ${t.passed?'psq-hist-pass':'psq-hist-fail'}”>${t.passed?'PASSED':'FAILED'}</span>
+      <div class="psq-hist-row">
+        <span class="psq-hist-date">${t.date}</span>
+        <span class="psq-hist-score">${t.score}/${t.total}</span>
+        <span class="psq-hist-pct">${t.pct}%</span>
+        <span class="psq-hist-result ${t.passed?'psq-hist-pass':'psq-hist-fail'}">${t.passed?'PASSED':'FAILED'}</span>
       </div>`).join('');
 
-    return`<div class=”psq-intro-grid”>
-      <div class=”card”>
-        <div class=”card-hd”><div class=”card-title”>§ 61.87(b) Requirement</div></div>
-        <p style=”font-size:14px;color:var(--text2);line-height:1.65;margin-bottom:14px”>Before solo flight, a student must pass a written test on the rules and procedures for the airport and the flight characteristics and operational limitations of the aircraft to be soloed.</p>
-        <div class=”psq-req-grid”>
-          <div class=”psq-req-chip”><span class=”psq-req-label”>Questions</span><span class=”psq-req-val”>${qTotal}</span></div>
-          <div class=”psq-req-chip”><span class=”psq-req-label”>Pass threshold</span><span class=”psq-req-val”>${PRESOLO_PASS_PCT}%</span></div>
-          <div class=”psq-req-chip”><span class=”psq-req-label”>Source</span><span class=”psq-req-val”>GL1 – GL6</span></div>
+    // Mid-test snapshot for THIS student? Surfaces a Resume / Discard prompt
+    // instead of silently letting "Start New Test" overwrite their progress.
+    const savedTest = loadPresoloTest(s.id);
+    const savedCount = savedTest ? savedTest.filter(q => q.pass !== null).length : 0;
+    const savedTotal = savedTest ? savedTest.length : 0;
+
+    return`<div class="psq-intro-grid">
+      <div class="card">
+        <div class="card-hd"><div class="card-title">§ 61.87(b) Requirement</div></div>
+        <p style="font-size:14px;color:var(--text2);line-height:1.65;margin-bottom:14px">Before solo flight, a student must pass a written test on the rules and procedures for the airport and the flight characteristics and operational limitations of the aircraft to be soloed.</p>
+        <div class="psq-req-grid">
+          <div class="psq-req-chip"><span class="psq-req-label">Questions</span><span class="psq-req-val">${qTotal}</span></div>
+          <div class="psq-req-chip"><span class="psq-req-label">Pass threshold</span><span class="psq-req-val">${PRESOLO_PASS_PCT}%</span></div>
+          <div class="psq-req-chip"><span class="psq-req-label">Source</span><span class="psq-req-val">GL1 – GL6</span></div>
         </div>
         ${everPassed
-          ?`<div class=”alert alert-ok” style=”margin-top:14px”>&#10003; ${s.name} has a passing score on record. Endorsement criteria met.</div>`
-          :`<div class=”alert alert-amber” style=”margin-top:14px”>No passing score on record yet for ${s.name}.</div>`}
-        <button class=”btn btn-primary” style=”margin-top:16px;width:100%” data-click-action=”start-presolo-test”>Start New Test &rarr;</button>
+          ?`<div class="alert alert-ok" style="margin-top:14px">&#10003; ${s.name} has a passing score on record. Endorsement criteria met.</div>`
+          :`<div class="alert alert-amber" style="margin-top:14px">No passing score on record yet for ${s.name}.</div>`}
+        ${savedTest ? `
+          <div class="alert alert-info" style="margin-top:14px">
+            <strong>Test in progress</strong> — ${savedCount} of ${savedTotal} questions marked.
+            Returning to the Pre-Solo Test view will resume this test automatically.
+          </div>
+          <div style="display:flex;gap:8px;margin-top:14px">
+            <button class="btn btn-primary" style="flex:1" data-click-action="start-presolo-resume">↩ Resume Test</button>
+            <button class="btn btn-ghost btn-sm" data-click-action="start-presolo-discard">Discard &amp; Start Over</button>
+          </div>
+        ` : `
+          <button class="btn btn-primary" style="margin-top:16px;width:100%" data-click-action="start-presolo-test">Start New Test &rarr;</button>
+        `}
       </div>
-      <div class=”card”>
-        <div class=”card-hd”>
-          <div class=”card-title”>Test History</div>
-          ${best!==null?`<span class=”psq-best-badge”>Best: ${best}%</span>`:''}
+      <div class="card">
+        <div class="card-hd">
+          <div class="card-title">Test History</div>
+          ${best!==null?`<span class="psq-best-badge">Best: ${best}%</span>`:''}
         </div>
-        ${tests.length?`<div class=”psq-hist”>${historyRows}</div>`:`<div class=”report-empty” style=”padding:24px 0”>No tests recorded yet.</div>`}
+        ${tests.length?`<div class="psq-hist">${historyRows}</div>`:`<div class="report-empty" style="padding:24px 0">No tests recorded yet.</div>`}
       </div>
     </div>`;
   },
