@@ -686,6 +686,18 @@ function handleClickAction(el, event) {
       event.stopPropagation();
       App.toggleWI(el.dataset.lid, Number(el.dataset.idx));
       break;
+    case 'reset-wi-discussed': {
+      const _s = getS();
+      if (!_s) break;
+      const _d = initSD(_s);
+      const _lid = el.dataset.lid;
+      if (_d.wiDiscussed && _d.wiDiscussed[_lid]) {
+        delete _d.wiDiscussed[_lid];
+        save();
+        App.render();
+      }
+      break;
+    }
     case 'save-note': App.saveNote(el.dataset.lid); break;
     case 'sign-off': App.showSignOffModal(el.dataset.lid); break;
     case 'confirm-sign-off': App.confirmSignOff(el.dataset.lid); break;
@@ -4154,7 +4166,14 @@ const V={
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap">
       <span style="background:var(--red);color:#fff;border-radius:3px;padding:3px 10px;font-family:var(--ff-mono);font-size:10px;font-weight:700;letter-spacing:1px">WHAT IF?</span>
       <span style="font-family:var(--ff-mono);font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--text3);flex:1">SRM Discussion Starters</span>
-      ${(function(){const disc=s&&s.data&&s.data.wiDiscussed&&s.data.wiDiscussed[lid]?Object.values(s.data.wiDiscussed[lid]).filter(Boolean).length:0;return disc>0?'<span style="font-family:var(--ff-mono);font-size:10px;color:var(--green);background:#f0fdf4;border:1px solid #86efac;border-radius:3px;padding:2px 8px">'+disc+'/'+whatIf.length+' discussed</span>':''})()}
+      ${(function(){
+        const disc = s && s.data && s.data.wiDiscussed && s.data.wiDiscussed[lid]
+          ? Object.values(s.data.wiDiscussed[lid]).filter(Boolean).length : 0;
+        if (disc === 0) return '';
+        return `
+          <span style="font-family:var(--ff-mono);font-size:10px;color:var(--green);background:#f0fdf4;border:1px solid #86efac;border-radius:3px;padding:2px 8px">${disc}/${whatIf.length} discussed</span>
+          <button class="btn btn-ghost btn-sm" style="font-size:10px;padding:2px 8px;font-family:var(--ff-mono)" data-click-action="reset-wi-discussed" data-lid="${lid}" title="Clear all discussed marks for this lesson">Reset</button>`;
+      })()}
     </div>
     <div style="display:flex;flex-direction:column;gap:7px">
       ${whatIf.map((item,i)=>{
