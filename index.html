@@ -122,7 +122,13 @@
 
 <!-- ── MAIN ── -->
 <div id="main">
-  <!-- Hidden legacy elements — app.js writes to these and must not throw -->
+  <!--
+    HIDDEN LEGACY ID SHIM — DO NOT REMOVE
+    app.js writes to these IDs in render(), nav(), saveNote(), etc.
+    Removing any of these silently breaks rendering.
+    These were preserved during the sidebar→top-nav rewrite to avoid
+    touching every write site.
+  -->
   <div class="topbar" style="display:none"></div>
   <div id="topTitle" style="display:none"></div>
   <div id="topCrumb" style="display:none"></div>
