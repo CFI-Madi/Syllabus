@@ -2550,11 +2550,20 @@ const App={
     }
     save();
     ['save_btn','save_btn_sticky'].forEach(function(id){
-      const btn=document.getElementById(id);
-      if(!btn) return;
-      btn.textContent='Saved';
-      setTimeout(()=>{btn.textContent=id==='save_btn'?'Save Debrief':'Save';},1500);
+      const el=document.getElementById(id);
+      if(!el) return;
+      const isBtn = el.tagName === 'BUTTON';
+      if(isBtn){
+        el.textContent='Saved ✓';
+        setTimeout(()=>{el.textContent=id==='save_btn'?'Save Debrief':'Save';},1500);
+      } else {
+        // autosave indicator span
+        el.textContent='✓ SAVED · Just now';
+        setTimeout(()=>{el.textContent='';},3000);
+      }
     });
+    const top=document.getElementById('autosave-topbar');
+    if(top){top.style.opacity='1';top.textContent='✓ Saved';setTimeout(()=>{top.style.opacity='0';},2500);}
   },
   showSignOffModal(lid){
     const lesson=GL[lid]||FL[lid];
