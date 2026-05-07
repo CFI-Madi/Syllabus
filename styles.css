@@ -2025,6 +2025,74 @@ body.dark-theme #wxMetarTTY { /* inherits dark card background */ }
 .procedure-traceability{font-family:var(--ff-mono);font-size:11px;color:var(--text3)}
 .procedure-related-lessons{display:flex;gap:8px;flex-wrap:wrap}
 .procedure-lesson-card{margin-bottom:16px}
+
+/* ── LESSON BOTTOM ACTION BAR ── */
+.lesson-action-bar {
+  position: sticky;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--bg2);
+  border-top: 2px solid var(--border);
+  padding: 10px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  z-index: 20;
+  box-shadow: 0 -2px 12px rgba(26,39,68,.08);
+  margin-top: 16px;
+}
+.lesson-action-bar-left,
+.lesson-action-bar-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 120px;
+}
+.lesson-action-bar-right { justify-content: flex-end; }
+.lesson-action-bar-center {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--ff-mono);
+  font-size: 11px;
+}
+.lesson-type-chip {
+  font-family: var(--ff-mono);
+  font-size: 10px;
+  color: var(--text3);
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 2px 8px;
+}
+.lesson-status-chip {
+  font-family: var(--ff-mono);
+  font-size: 10px;
+  border-radius: 999px;
+  padding: 2px 8px;
+  border: 1px solid var(--border);
+}
+.lesson-status-chip--signed_off { background: var(--green-dim); border-color: var(--green); color: var(--green); }
+.lesson-status-chip--needs_review { background: var(--red-dim); border-color: var(--red); color: var(--red); }
+.lesson-status-chip--not_started,
+.lesson-status-chip--introduced,
+.lesson-status-chip--practiced,
+.lesson-status-chip--proficient { background: var(--olive-dim); border-color: var(--olive); color: var(--olive); }
+
+/* Autosave indicator */
+.autosave-indicator {
+  font-family: var(--ff-mono);
+  font-size: 10px;
+  color: var(--green);
+  opacity: 0;
+  transition: opacity .3s;
+}
+.autosave-indicator:not(:empty) { opacity: 1; }
+
+body.dark-theme .lesson-action-bar { background: var(--bg2); border-top-color: var(--border); }
+
 @media print{
   .report-toolbar{display:none!important}
   .report-shell{padding:0;border:none;box-shadow:none}

@@ -3440,7 +3440,7 @@ const V={
     <div class="sticky-lesson-bar">
       <span class="sticky-stu-name">${s.name.toUpperCase()}</span>
             <span class="sticky-phase-tag">${phase?phase.title:'PPL'} · ${lid}</span>
-      ${s&&!studentMode?`<button class="btn btn-primary btn-sm sticky-save-btn" id="save_btn_sticky" data-click-action="save-note" data-lid="${lid}">Save</button>`:''}
+      ${s&&!studentMode?`<span id="save_btn_sticky" class="autosave-indicator"></span>`:''}
     </div>`:'';
     const tabs = studentMode
       ? [
@@ -3489,15 +3489,26 @@ const V={
           <span style="font-family:var(--ff-mono);font-size:11px;color:var(--text3)">${lp.done}/${lp.total} tasks</span>
         </div>`:''}
       </div>
-        <div class="detail-actions"${studentMode?' style="display:none"':''}>
-          ${s&&status!=='signed_off'?`<button class="btn btn-green btn-sm" data-click-action="sign-off" data-lid="${lid}">&#10003; Sign Off All</button>`:''}
-          ${s&&status==='signed_off'?`<span class="sbadge s-signed_off" style="padding:5px 10px">&#10003; Signed Off</span>`:''}
-        </div>
+        <div class="detail-actions" style="display:none"></div>
       </div>
       <div class="tabs">
       ${tabs.map(tab=>`<div class="tab${tab.id===activeTab?' active':''}" data-tab="${tab.id}" data-click-action="set-tab"${tab.style?` style="${tab.style}"`:''}>${tab.label}</div>`).join('')}
       </div>
-      <div id="tabContent">${this.lessonTab(lid,s,activeTab)}</div>`;
+      <div id="tabContent">${this.lessonTab(lid,s,activeTab)}</div>
+      ${!studentMode?`
+      <div class="lesson-action-bar">
+        <div class="lesson-action-bar-left">
+          <button class="btn btn-ghost btn-sm" data-click-action="nav-lessons">← Lessons</button>
+        </div>
+        <div class="lesson-action-bar-center">
+          <span class="lesson-type-chip">${isFL?'Flight':'Ground'} · Stage ${lesson.stage}</span>
+          ${s?`<span class="lesson-status-chip lesson-status-chip--${status}">${status==='signed_off'?'✓ Signed Off':status==='needs_review'?'Needs Review':'In Progress'}</span>`:''}
+        </div>
+        <div class="lesson-action-bar-right">
+          ${s&&status!=='signed_off'?`<button class="btn btn-green btn-sm" data-click-action="sign-off" data-lid="${lid}">✓ Sign Off</button>`:''}
+          ${s&&status==='signed_off'?`<span class="sbadge s-signed_off" style="padding:4px 10px">✓ Signed Off</span>`:''}
+        </div>
+      </div>`:''}`;
   },
 
   lessonTab(lid,s,tab){
