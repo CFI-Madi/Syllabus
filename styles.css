@@ -501,13 +501,10 @@ body.sidebar-collapsed .nav-group > .nav-group-items { display: none !important;
 
 /* ── TASK CARDS ── */
 .task-cards-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
   margin-bottom: 12px;
-}
-@media (max-width: 768px) {
-  .task-cards-grid { grid-template-columns: 1fr; }
 }
 
 .task-card {
