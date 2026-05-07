@@ -6390,23 +6390,23 @@ function syncWindToXWCalc() {
 
 // --- W&B CALCULATOR ---------------------------------------------------
 /**
- * calcWB()
+ * calcWB() — PA-28-140 Cherokee Weight & Balance calculator
  *
  * Reads the user-entered weights from the W&B table inputs,
  * computes Total Weight, Total Moment, and CG (center of gravity),
  * then updates the result panel and the CG gauge needle.
  *
- * C172 station arms (inches from datum):
- *   Empty aircraft : 39.84  (moment 65,420 / weight 1,642)
- *   Front seats    : 37.0
- *   Rear seats     : 73.0
- *   Fuel           : 48.0
- *   Baggage Area 1 : 95.0
+ * PA-28-140 station arms (inches aft of datum):
+ *   Empty aircraft (typical) : 85.2  (varies per tail — see CHEROKEE_WB_PROFILE)
+ *   Front seats              : 85.5
+ *   Rear seats               : 117.0
+ *   Baggage compartment      : 142.8
+ *   Fuel (Avgas, 6 lbs/gal)  : 95.0
  *
- * CG envelope limits (simplified, max gross):
- *   Forward limit  : 35.0 inches
- *   Aft limit      : 47.3 inches
- *   Max gross      : 2,550 lbs
+ * CG envelope (POH Section I):
+ *   Forward limit (varies)   : 84.0 in @ 1650 lbs to 88.4 in @ 2150 lbs
+ *   Aft limit                : 95.9 in
+ *   Max gross weight         : 2,150 lbs
  */
 let wbFuelUnit='lbs';
 
