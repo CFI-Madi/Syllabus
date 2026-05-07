@@ -5290,7 +5290,7 @@ Live browser fetch is disabled because Aviation Weather Center blocks cross-orig
     <div style="margin-top:8px;padding:11px 14px;background:var(--amber-dim);border:1px solid var(--amber);border-radius:var(--r)">
       <div class="section-label" style="color:var(--amber);margin-bottom:4px">KJQF Local Notes</div>
       <div style="font-size:12px;color:var(--text2);line-height:1.8">
-        &#9632; <strong>ASOS frequency:</strong> 119.025 MHz | auto-report every 20 min or on change.<br>
+        &#9632; <strong>ASOS frequency:</strong> 119.025 MHz | hourly METAR with SPECI on changes<br>
         &#9632; <strong>Summer (May-Oct):</strong> Afternoon convection after 2 pm | watch temp/dewpoint spread.<br>
         &#9632; <strong>Morning fog:</strong> Spread 3 C or less at 0600Z | expect low IFR until about 10 am local.<br>
         &#9632; <strong>KCLT Class B:</strong> KJQF inside 30 NM Mode C veil | monitor KCLT ATIS on 135.075.
