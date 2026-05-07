@@ -3731,9 +3731,10 @@ const V={
     if (selected && curPohId !== selected.id) curPohId = selected.id;
 
     const SYSTEM_GROUPS = [
-      { id:'systems',     label:'Systems',            icon:'⚙' },
-      { id:'performance', label:'Performance',         icon:'◎' },
-      { id:'wb',          label:'Weight & Balance',    icon:'⊞' },
+      { id:'systems',     label:'Systems',              icon:'⚙' },
+      { id:'operating',   label:'Operating Reference',  icon:'≡' },
+      { id:'performance', label:'Performance',          icon:'◎' },
+      { id:'wb',          label:'Weight & Balance',     icon:'⊞' },
     ];
 
     return `
