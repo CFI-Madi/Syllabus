@@ -52,15 +52,35 @@ const AFH_CH_REMAP = {
   8: 9,   // Approaches and Landings         (was ch 8)
   9: 10,  // Performance Maneuvers           (was ch 9)
   10: 11, // Night Operations                (was ch 10)
+  11: 12, // Transition to Complex Aircraft  (was ch 11)
+  12: 13, // Transition to Multiengine       (was ch 12)
+  13: 14, // Transition to Tailwheel         (was ch 13)
+  14: 15, // Transition to Turbopropeller    (was ch 14)
+  15: 16, // Transition to Jet               (was ch 15)
+  16: 17, // Transition to Light Sport       (was ch 16)
   17: 18  // Emergency Procedures            (was ch 17)
 };
+
+// Single source of truth for the remap lookup. Warns once-loud-then-quiet on
+// any unmapped chapter so a future syllabus edit referencing AFH Ch.N where
+// N isn't in AFH_CH_REMAP doesn't silently link to the wrong PDF — the
+// console will say "add it" the first time it's hit.
+const _afhRemapWarned = new Set();
+function afhRemap(syllabusN) {
+  if (Object.prototype.hasOwnProperty.call(AFH_CH_REMAP, syllabusN)) return AFH_CH_REMAP[syllabusN];
+  if (!_afhRemapWarned.has(syllabusN)) {
+    _afhRemapWarned.add(syllabusN);
+    console.warn('[afh] no remap for syllabus chapter', syllabusN, '- using as-is. Add to AFH_CH_REMAP in app.js.');
+  }
+  return syllabusN;
+}
 
 const _pad2 = n => String(n).padStart(2, '0');
 function phakChapterUrl(n) {
   return `${PHAK_BASE}/${_pad2(n + 2)}_phak_ch${n}.pdf`;
 }
 function afhChapterUrl(syllabusN) {
-  const n = AFH_CH_REMAP[syllabusN] || syllabusN;
+  const n = afhRemap(syllabusN);
   return `${AFH_BASE}/${_pad2(n + 1)}_afh_ch${n}.pdf`;
 }
 
@@ -1708,7 +1728,7 @@ const H={
       readings.push({src:'PHAK',title:`Chapter ${n}${PHAK_CH[n] ? ' - ' + PHAK_CH[n] : ''}`,url:phakChapterUrl(n),color:'var(--amber)'});
     });
     Array.from(afhSeen).sort((a,b)=>a-b).forEach(function(n){
-      const afhDisplayN=AFH_CH_REMAP[n]||n;
+      const afhDisplayN=afhRemap(n);
       readings.push({src:'AFH',title:`Chapter ${afhDisplayN}${AFH_CH[n] ? ' - ' + AFH_CH[n] : ''}`,url:afhChapterUrl(n),color:'var(--blue)'});
     });
     if(aimSeen.size) readings.push({src:'AIM',title:'Aeronautical Information Manual',url:REF_URLS.AIM,color:'var(--green)'});
@@ -4062,7 +4082,7 @@ const V={
           <div style="display:flex;gap:6px;flex-wrap:wrap;padding:8px 14px;border-bottom:1px solid var(--border)">
             ${acsCode?`<a href="${acsHref}" target="_blank" class="acs-tag">ACS ${acsCode}</a>`:''}
             ${phakMatch?`<a href="${phakHref}" target="_blank" class="task-ref" style="text-decoration:none;color:var(--blue)">PHAK Ch.${phakChNum}</a>`:''}
-            ${afhMatch?`<a href="${afhHref}" target="_blank" class="task-ref" style="text-decoration:none;color:var(--blue)">AFH Ch.${AFH_CH_REMAP[afhChNum]||afhChNum}</a>`:''}
+            ${afhMatch?`<a href="${afhHref}" target="_blank" class="task-ref" style="text-decoration:none;color:var(--blue)">AFH Ch.${afhRemap(afhChNum)}</a>`:''}
             ${aimMatch?`<a href="${REF_URLS.AIM}" target="_blank" class="task-ref" style="text-decoration:none;color:var(--blue)">AIM</a>`:''}
             ${textRef&&!phakMatch&&!afhMatch&&!aimMatch?`<span class="task-ref">${textRef}</span>`:''}
           </div>`:''}
