@@ -6187,11 +6187,19 @@ function runGoNoGo() {
   const ceilMatch = metarRaw.match(/\b(?:BKN|OVC)(\d{3})\b/);
   const parsedCeil = ceilMatch ? parseInt(ceilMatch[1]) * 100 : null;
 
-  // --- Crosswind for KJQF Rwy 02 (020Â°) and Rwy 20 (200Â°)
+  // --- Crosswind for KJQF Rwy 02 (020°) and Rwy 20 (200°). Pick favored runway.
   let xw = null;
+  let favoredRwy = null;
   if(wind && wind.dir !== 'VRB' && wind.speed > 0) {
-    const wdRad = (parseInt(wind.dir) - 20) * Math.PI / 180; // diff from Rwy 02
-    xw = Math.abs(wind.speed * Math.sin(wdRad));
+    const rwyXw = (rwyHdg, windDir, windSpd) => {
+      const angle = ((windDir - rwyHdg + 540) % 360) - 180;
+      return Math.abs(windSpd * Math.sin(angle * Math.PI / 180));
+    };
+    const dir = parseInt(wind.dir);
+    const xw02 = rwyXw(20, dir, wind.speed);
+    const xw20 = rwyXw(200, dir, wind.speed);
+    favoredRwy = xw02 <= xw20 ? '02' : '20';
+    xw = Math.min(xw02, xw20);
   }
 
   function item(label, icon, actual, min, unit, isMin=false, fmt=null) {
@@ -6221,7 +6229,7 @@ function runGoNoGo() {
   const items = [
     item('Wind Speed', 'Wind', wind ? wind.speed : null, mins.windSpd, 'kt'),
     item('Wind Gust',  'Gust', wind && wind.gust ? wind.gust : (wind ? 0 : null), mins.windGust, 'kt'),
-    item('Crosswind',  'XW',  xw, mins.crosswind, 'kt'),
+    item(favoredRwy ? `Crosswind (Rwy ${favoredRwy})` : 'Crosswind', 'XW', xw, mins.crosswind, 'kt'),
     item('Visibility', 'Vis', parsedVis, mins.vis, 'SM', true, v=>`${v} SM`),
     item('Ceiling',    'Ceil', parsedCeil, mins.ceiling, 'ft', true, v=>`${v.toLocaleString()} ft`),
   ];
