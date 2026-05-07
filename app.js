@@ -638,7 +638,7 @@ function handleClickAction(el, event) {
       case 'show-add-student': App.showAddStudent(); break;
     case 'quick-search-go': quickSearchGo(el.dataset.lid); break;
     case 'nav': {
-      const TOOL_VIEWS = new Set(['xwind','wx','wb','performance','decision','5p']);
+      const TOOL_VIEWS = new Set(['xwind','wx','wb','performance','fuel','decision','5p']);
       const v = el.dataset.view;
       if(TOOL_VIEWS.has(v)){ curToolsTab=v; App.nav('tools'); }
       else App.nav(v);
@@ -808,6 +808,7 @@ function handleChangeAction(el, event) {
     case 'select-student': App.selectStudent(el.value); break;
     case 'import-data': App.importData(event); break;
     case 'calc-performance': calcPerformance(); break;
+    case 'calc-fuel': calcFuel(); break;
     case 'set-subtask': App.setSubtask(el.dataset.lid, el.dataset.tid, Number(el.dataset.idx), el.checked); break;
     case 'set-task-status': App.setTaskStatus(el.dataset.lid, el.dataset.tid, el.value); break;
     case 'save-stage-check': App.saveStageCheck(el.dataset.lid, el.dataset.field, el.value); break;
@@ -827,6 +828,7 @@ function handleInputAction(el) {
     case 'xw-calc': xwCalc(); break;
     case 'calc-wb': calcWB(); break;
     case 'calc-performance': calcPerformance(); break;
+    case 'calc-fuel': calcFuel(); break;
   }
 }
 
@@ -2639,6 +2641,7 @@ const App={
         if(curToolsTab==='wx') setTimeout(()=>{ if(typeof fetchKJQFWeather==='function') fetchKJQFWeather(); },80);
         if(curToolsTab==='wb') setTimeout(()=>{ if(typeof calcWB==='function') calcWB(); },0);
         if(curToolsTab==='performance') setTimeout(()=>{ if(typeof calcPerformance==='function') calcPerformance(); },0);
+        if(curToolsTab==='fuel') setTimeout(()=>{ if(typeof calcFuel==='function') calcFuel(); },0);
         break;
       case 'lesson':       el.innerHTML=V.lessonDetail(curLesson,s);
         ta.innerHTML=`<button class="btn btn-ghost btn-sm" data-click-action="nav-lessons">&larr; Back</button>`;break;
@@ -4976,6 +4979,7 @@ ${lesson.isStageCheck?'<div style="font-family:var(--ff-mono);font-size:10px;col
       {id:'wx',      icon:'☁',  label:'Weather'},
       {id:'wb',      icon:'⚖',  label:'W & B'},
       {id:'performance', icon:'PF', label:'Performance'},
+      {id:'fuel',    icon:'⛽', label:'Fuel'},
       {id:'decision',icon:'⚠',  label:'Go / No-Go'},
       {id:'5p',      icon:'✈',  label:'5P Pre-Flight'},
     ];
@@ -4985,6 +4989,7 @@ ${lesson.isStageCheck?'<div style="font-family:var(--ff-mono);font-size:10px;col
       case 'wx':          inner=V.wx(s);break;
       case 'wb':          inner=V.weightBalance();break;
       case 'performance': inner=V.performance(s);break;
+      case 'fuel':        inner=V.fuelEndurance(s);break;
       case 'decision':    inner=V.preflightDecision(s);break;
       case '5p':          inner=V.fiveP(s);break;
     }
@@ -5951,6 +5956,68 @@ Live browser fetch is disabled because Aviation Weather Center blocks cross-orig
     </div>
     </div>`;
   },
+
+  fuelEndurance(s) {
+    return `
+    <div class="page-hd">
+      <div class="page-hd-main">
+        <div class="page-hd-eyebrow">PA-28-140 CHEROKEE · POH SECTION I</div>
+        <div class="page-hd-title">FUEL & ENDURANCE</div>
+        <div class="page-hd-sub">Plan fuel · check § 91.151 reserves · estimate range</div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:16px">
+      <div class="card-hd"><div class="card-title">Inputs</div></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+
+        <div class="fg" style="margin:0">
+          <label>Fuel Onboard (gallons usable)</label>
+          <input class="finput" id="fuel_gallons" type="number" step="0.1" min="0" value="36" data-input-action="calc-fuel">
+          <div style="font-family:var(--ff-mono);font-size:10px;color:var(--text3);margin-top:3px">
+            Standard tanks: 36 gal · Long-range: 48 gal
+          </div>
+        </div>
+
+        <div class="fg" style="margin:0">
+          <label>Power Setting</label>
+          <select class="fselect" id="fuel_power" data-change-action="calc-fuel">
+            ${CHEROKEE_FUEL_DATA.powerSettings.map(p =>
+              `<option value="${p.id}">${p.label} — ${p.gph} gph @ ${p.kt} kt</option>`
+            ).join('')}
+          </select>
+        </div>
+
+        <div class="fg" style="margin:0">
+          <label>Distance to Destination (NM)</label>
+          <input class="finput" id="fuel_distance" type="number" step="1" min="0" placeholder="e.g. 80" data-input-action="calc-fuel">
+        </div>
+
+        <div class="fg" style="margin:0">
+          <label>Groundspeed (kt — actual or planned)</label>
+          <input class="finput" id="fuel_gs" type="number" step="1" min="0" placeholder="e.g. 100" data-input-action="calc-fuel">
+          <div style="font-family:var(--ff-mono);font-size:10px;color:var(--text3);margin-top:3px">
+            Defaults to power-setting TAS if blank
+          </div>
+        </div>
+
+        <div class="fg" style="margin:0">
+          <label>Flight Type (for reserve)</label>
+          <select class="fselect" id="fuel_type" data-change-action="calc-fuel">
+            <option value="day">Day VFR — 30 min reserve</option>
+            <option value="night">Night VFR — 45 min reserve</option>
+          </select>
+        </div>
+
+      </div>
+    </div>
+
+    <div id="fuelResults" style="margin-top:16px"></div>
+
+    <div class="alert alert-info" style="margin-top:16px;font-size:12px">
+      <strong>Estimates only.</strong> Burn rates and TAS are POH cruise figures at 4–7,000 ft DA, gross weight, leaned per POH. Actual fuel burn varies with leaning technique, altitude, and wind. Always plan with margin.
+    </div>`;
+  },
 };
 
 
@@ -5981,6 +6048,21 @@ const CHEROKEE_WB_PROFILE = {
   ]
 };
 CHEROKEE_WB_PROFILE.emptyMoment = CHEROKEE_WB_PROFILE.emptyWeight * CHEROKEE_WB_PROFILE.emptyCg;
+
+// PA-28-140 Cherokee fuel burn data (POH Section I, Performance table)
+const CHEROKEE_FUEL_DATA = {
+  aircraft: 'PA-28-140 Cherokee 140',
+  tankConfigs: [
+    { id:'standard',   label:'Standard tanks',   usable:36 },
+    { id:'long_range', label:'Long-range tanks', usable:48 }
+  ],
+  powerSettings: [
+    { id:'75', label:'75% power (cruise)',    gph:7.9, kt:108 },
+    { id:'65', label:'65% power (economy)',   gph:6.7, kt:103 },
+    { id:'55', label:'55% power (max range)', gph:5.6, kt:97  },
+    { id:'50', label:'50% power (loiter)',    gph:5.3, kt:93  }
+  ]
+};
 
 const CHEROKEE_PERFORMANCE_BASELINE = {
   takeoff:{
@@ -6653,6 +6735,81 @@ function calcPerformance() {
   };
 }
 
+
+// ─── FUEL & ENDURANCE CALCULATOR ─────────────────────────────────────
+function calcFuel() {
+  const galEl = document.getElementById('fuel_gallons');
+  const powerEl = document.getElementById('fuel_power');
+  const distEl = document.getElementById('fuel_distance');
+  const gsEl = document.getElementById('fuel_gs');
+  const typeEl = document.getElementById('fuel_type');
+  const out = document.getElementById('fuelResults');
+  if (!galEl || !out) return;
+
+  const gallons = parseFloat(galEl.value) || 0;
+  const powerId = powerEl?.value || '75';
+  const distance = parseFloat(distEl?.value) || 0;
+  const flightType = typeEl?.value || 'day';
+
+  const power = CHEROKEE_FUEL_DATA.powerSettings.find(p => p.id === powerId)
+                || CHEROKEE_FUEL_DATA.powerSettings[0];
+  const gs = parseFloat(gsEl?.value) || power.kt;
+
+  const enduranceHrs = gallons / power.gph;
+  const enduranceH = Math.floor(enduranceHrs);
+  const enduranceM = Math.round((enduranceHrs - enduranceH) * 60);
+
+  const rangeNm = enduranceHrs * gs;
+
+  const reserveMin = flightType === 'night' ? 45 : 30;
+  const reserveHrs = reserveMin / 60;
+  const reserveGal = reserveHrs * power.gph;
+  const usableGal = Math.max(0, gallons - reserveGal);
+  const usableHrs = usableGal / power.gph;
+  const usableRangeNm = usableHrs * gs;
+
+  let tripBlock = '';
+  if (distance > 0 && gs > 0) {
+    const tripHrs = distance / gs;
+    const tripGal = tripHrs * power.gph;
+    const tripH = Math.floor(tripHrs);
+    const tripM = Math.round((tripHrs - tripH) * 60);
+    const fuelAtArrival = gallons - tripGal;
+    const fuelAtArrivalMin = (fuelAtArrival / power.gph) * 60;
+    const meetsReserve = fuelAtArrivalMin >= reserveMin;
+    const reserveDelta = fuelAtArrivalMin - reserveMin;
+
+    tripBlock = `
+    <div class="card" style="margin-bottom:12px">
+      <div class="card-hd"><div class="card-title">Trip Calculation — ${distance} NM at ${gs} kt</div></div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px">
+        <div class="proc-spec-card"><div class="proc-spec-lbl">ETE</div><div class="proc-spec-val">${tripH}h ${tripM}m</div></div>
+        <div class="proc-spec-card"><div class="proc-spec-lbl">Fuel Burn</div><div class="proc-spec-val">${tripGal.toFixed(1)} gal</div></div>
+        <div class="proc-spec-card"><div class="proc-spec-lbl">Fuel at Arrival</div><div class="proc-spec-val" style="color:${fuelAtArrival<reserveGal?'var(--red)':'var(--green)'}">${fuelAtArrival.toFixed(1)} gal</div></div>
+        <div class="proc-spec-card"><div class="proc-spec-lbl">Reserve at Arrival</div><div class="proc-spec-val" style="color:${meetsReserve?'var(--green)':'var(--red)'}">${Math.round(fuelAtArrivalMin)} min</div></div>
+      </div>
+      <div style="margin-top:12px;padding:10px 14px;border-radius:8px;background:${meetsReserve?'var(--olive-dim)':'var(--red-dim)'};border:1px solid ${meetsReserve?'var(--olive)':'var(--red)'};color:${meetsReserve?'var(--olive2)':'var(--red)'};font-family:var(--ff-mono);font-size:13px;font-weight:600">
+        ${meetsReserve
+          ? `✓ § 91.151 ${flightType === 'night' ? '45-min night' : '30-min day'} reserve met — ${Math.round(reserveDelta)} min margin`
+          : `✗ § 91.151 ${flightType === 'night' ? '45-min night' : '30-min day'} reserve NOT met — ${Math.abs(Math.round(reserveDelta))} min short`}
+      </div>
+    </div>`;
+  }
+
+  out.innerHTML = `
+    ${tripBlock}
+    <div class="card">
+      <div class="card-hd"><div class="card-title">Endurance & Range Summary</div></div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px">
+        <div class="proc-spec-card"><div class="proc-spec-lbl">Total Endurance</div><div class="proc-spec-val">${enduranceH}h ${enduranceM}m</div></div>
+        <div class="proc-spec-card"><div class="proc-spec-lbl">Range (no reserve)</div><div class="proc-spec-val">${Math.round(rangeNm)} NM</div></div>
+        <div class="proc-spec-card"><div class="proc-spec-lbl">Reserve Required</div><div class="proc-spec-val">${reserveGal.toFixed(1)} gal (${reserveMin} min)</div></div>
+        <div class="proc-spec-card"><div class="proc-spec-lbl">Usable for Trip</div><div class="proc-spec-val">${usableGal.toFixed(1)} gal</div></div>
+        <div class="proc-spec-card"><div class="proc-spec-lbl">Range w/ Reserve</div><div class="proc-spec-val">${Math.round(usableRangeNm)} NM</div></div>
+        <div class="proc-spec-card"><div class="proc-spec-lbl">Burn Rate</div><div class="proc-spec-val">${power.gph} gph</div></div>
+      </div>
+    </div>`;
+}
 
 // ─── TOOL CALCULATOR FUNCTIONS ───────────────────────────────────────
 function xwCalc(){
