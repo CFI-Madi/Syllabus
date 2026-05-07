@@ -2639,7 +2639,20 @@ const App={
       if(s.id===state.activeId)o.selected=true;sel.appendChild(o);
     });
   },
-  selectStudent(id,options={}){state.activeId=id||null;save();this.render();if(options.updateRoute!==false)syncRoute(options.replaceRoute!==false);},
+  selectStudent(id,options={}){
+    // Clear in-memory pre-solo test state when switching students.
+    // The localStorage snapshots are keyed by studentId so they're already
+    // isolated; the bug is curPresoloTest is module-level and would otherwise
+    // render the previous student's test under the new student's name.
+    if(state.activeId !== id){
+      curPresoloTest = null;
+      curPresoloTestWasRestored = false;
+    }
+    state.activeId=id||null;
+    save();
+    this.render();
+    if(options.updateRoute!==false)syncRoute(options.replaceRoute!==false);
+  },
   showAddStudent(){
     document.getElementById('modals').innerHTML=`
     <div class="modal-bg">
