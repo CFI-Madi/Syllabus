@@ -385,6 +385,17 @@ function handleClickAction(el, event) {
     case 'set-phase': App.setPhase(el.dataset.phase); break;
     case 'set-tab': App.setTab(el.dataset.tab); break;
     case 'toggle-task': App.toggleTask(el.dataset.lid, el.dataset.tid); break;
+    case 'task-step-prev':
+      curTaskStep = Math.max(0, curTaskStep - 1);
+      document.getElementById('tabContent').innerHTML = V.lessonTab(curLesson, getS(), 'fly');
+      break;
+    case 'task-step-next': {
+      const _flyLesson = GL[curLesson] || FL[curLesson];
+      const _maxStep = (_flyLesson?.tasks?.length || 1) - 1;
+      curTaskStep = Math.min(_maxStep, curTaskStep + 1);
+      document.getElementById('tabContent').innerHTML = V.lessonTab(curLesson, getS(), 'fly');
+      break;
+    }
     case 'toggle-display': toggleElementDisplay(el.dataset.targetId); break;
     case 'toggle-wi':
       event.stopPropagation();
@@ -2016,6 +2027,7 @@ function lessonTypeLabel(lesson) {
 
 // â”€â”€â”€ APP â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 let curView='dashboard',curLesson=null,curTab='tasks',curHomeworkView='print',expandedTasks={},curPhase='presolo',curProcedureCategory='all',curProcedureSearch='',curProcedureId=null,curPohCategory='all',curPohSearch='',curPohId=null,appMode='instructor';
+let curTaskStep = 0;  // index of currently displayed task in Fly tab
 let curToolsTab='xwind';
 let curPresoloTest=null;
 let isApplyingRoute = false;
@@ -2166,7 +2178,7 @@ const App={
     }
     this.nav(studentSafeView(curView));
   },
-  openLesson(lid){ this.nav('lesson', lid); },
+  openLesson(lid){ curTaskStep = 0; this.nav('lesson', lid); },
   openProcedure(pid){
     curProcedureId = PROCEDURES_BY_ID[pid] ? pid : AIRCRAFT_PROCEDURES[0]?.id || null;
     this.nav('procedures');
@@ -2391,6 +2403,7 @@ const App={
     save();this.renderStuSel();this.render();
   },
   openLesson(lid){
+    curTaskStep = 0;
     if(isStudentMode()){
       curTab='homework';
       curHomeworkView='digital';
@@ -4407,19 +4420,108 @@ ${lesson.isStageCheck?'<div style="font-family:var(--ff-mono);font-size:10px;col
       </div>` : ''}`;
   },
 
-  tabFly(lid,s){
-    const lesson=GL[lid]||FL[lid];
-    if(!lesson) return '';
-    const isFL=!!FL[lid];
-    if(isFL){
+  tabFly(lid, s) {
+    const lesson = GL[lid] || FL[lid];
+    if (!lesson) return '';
+    const isFL = !!FL[lid];
+    const tasks = lesson.tasks || [];
+    const total = tasks.length;
+
+    if (!isFL || total === 0) {
       return `
-        <div class="tab-section">
-          ${this.tabTasks(lid,s)}
-        </div>`;
+        <div class="section-lbl" style="margin-bottom:10px">Ground Lesson — task review</div>
+        ${this.tabTasks(lid,s)}`;
     }
+
+    // Clamp step to valid range
+    const step = Math.max(0, Math.min(curTaskStep, total - 1));
+    const task = tasks[step];
+    if (!task) return '';
+
+    const ts = getTStatus(s, lid, task.id);
+    const sg = getSGrade(s, lid, task.id);
+    const ig = getIGrade(s, lid, task.id);
+    const checks = s ? getSubChecks(s, lid, task.id) : [];
+    const subTotal = task.subtasks?.length || 0;
+    const subDone = task.subtasks?.filter((_, i) => checks[i]).length || 0;
+    const acsCode = task.acsRef?.split(',')[0]?.trim() || '';
+    const acsPage = ACS_PAGES[acsCode] || 1;
+    const acsHref = `${ACS_URL}#page=${acsPage}`;
+    const hasS = !!s;
+
+    // Progress dots
+    const dots = tasks.map((t, i) => {
+      const tts = getTStatus(s, lid, t.id);
+      const color = tts === 'signed_off' ? 'var(--green)'
+        : tts === 'needs_review' ? 'var(--red)'
+        : tts !== 'not_started' ? 'var(--olive-light)'
+        : 'var(--border2)';
+      return `<div style="width:${i === step ? 20 : 8}px;height:8px;border-radius:4px;background:${i === step ? 'var(--olive)' : color};transition:all .2s;flex-shrink:0"></div>`;
+    }).join('');
+
     return `
-      <div class="section-lbl" style="margin-bottom:10px">Ground Lesson — task review</div>
-      ${this.tabTasks(lid,s)}`;
+    <!-- Step counter + progress -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+      <div style="font-family:var(--ff-display);font-size:13px;letter-spacing:2px;color:var(--text3)">TASK ${step + 1} OF ${total}</div>
+      <div style="display:flex;gap:4px;align-items:center">${dots}</div>
+    </div>
+
+    <!-- Main task card — large format -->
+    <div class="fly-task-card">
+      <div class="fly-task-num">${step + 1}</div>
+      <div class="fly-task-body">
+        <div class="fly-task-title">${task.text}</div>
+        ${acsCode ? `<a href="${acsHref}" target="_blank" class="fly-task-acs" data-stop-prop="true">ACS ${acsCode}</a>` : ''}
+
+        <!-- Subtasks -->
+        ${subTotal > 0 ? `
+        <div class="fly-task-subtasks">
+          <div class="task-card-subtask-hd">Checklist ${subDone === subTotal ? '<span style="color:var(--green)">✓ All Complete</span>' : subDone + '/' + subTotal}</div>
+          ${task.subtasks.map((sub, i) => {
+            const checked = checks[i] || false;
+            return `<label style="display:flex;align-items:flex-start;gap:10px;padding:8px 0;cursor:${hasS ? 'pointer' : 'default'};border-bottom:1px solid var(--border);font-size:14px;color:${checked ? 'var(--text3)' : 'var(--text2)'}">
+              <input type="checkbox" ${checked ? 'checked' : ''} ${!hasS ? 'disabled' : ''} id="stcb_${lid}_${task.id}_${i}" data-change-action="set-subtask" data-lid="${lid}" data-tid="${task.id}" data-idx="${i}" style="margin-top:3px;flex-shrink:0;accent-color:var(--olive);width:18px;height:18px">
+              <span style="${checked ? 'text-decoration:line-through' : ''}">${sub}</span>
+            </label>`;
+          }).join('')}
+        </div>` : ''}
+
+        <!-- Grade + status controls -->
+        ${hasS ? `
+        <div class="fly-task-controls">
+          <div style="margin-bottom:10px">
+            <select class="fselect s-${ts}" data-change-action="set-task-status" data-lid="${lid}" data-tid="${task.id}" style="font-size:13px;padding:6px 10px;width:100%">
+              ${[{v:'not_started',l:'Not Started'},{v:'introduced',l:'Introduced'},{v:'practiced',l:'Practiced'},{v:'proficient',l:'Proficient'},{v:'needs_review',l:'Needs Review'},{v:'signed_off',l:'Signed Off'}].map(x=>`<option value="${x.v}"${ts===x.v?' selected':''}>${x.l}</option>`).join('')}
+            </select>
+          </div>
+          <div class="task-grade-row" style="margin-bottom:6px">
+            <span class="task-grade-lbl">Stu</span>
+            <span id="sg_${lid}_${task.id}">${H.gradeButtons(lid, task.id, 'student', sg)}</span>
+          </div>
+          <div class="task-grade-row">
+            <span class="task-grade-lbl">CFI</span>
+            <span id="ig_${lid}_${task.id}">${H.gradeButtons(lid, task.id, 'instructor', ig)}</span>
+          </div>
+        </div>` : '<div style="color:var(--text3);font-size:13px;margin-top:12px">Select a student to grade tasks.</div>'}
+      </div>
+    </div>
+
+    <!-- Prev / Next navigation -->
+    <div class="fly-step-nav">
+      <button class="fly-step-btn fly-step-btn--prev"
+              data-click-action="task-step-prev"
+              ${step === 0 ? 'disabled' : ''}>
+        ← Previous
+      </button>
+      <div style="font-family:var(--ff-mono);font-size:11px;color:var(--text3);text-align:center">
+        <span id="tsbadge_${lid}_${task.id}" class="sbadge s-${ts}">${{not_started:'Not Started',introduced:'Introduced',practiced:'Practiced',proficient:'Proficient',needs_review:'Review',signed_off:'✓ Signed Off'}[ts] || ts}</span>
+      </div>
+      <button class="fly-step-btn fly-step-btn--next"
+              data-click-action="task-step-next"
+              ${step === total - 1 ? 'disabled' : ''}>
+        Next →
+      </button>
+    </div>`;
   },
 
   tabDebrief3(lid,s){

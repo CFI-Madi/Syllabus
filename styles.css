@@ -404,7 +404,12 @@ body.sidebar-collapsed .nav-group > .nav-group-items { display: none !important;
 .card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:18px;box-shadow:var(--shadow);transition:box-shadow .18s}
 .card:hover{box-shadow:var(--shadow-md)}
 .card-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
-.card-title{font-family:var(--ff-mono);font-size:12px;color:var(--text3);text-transform:uppercase;letter-spacing:1px}
+.card-title {
+  font-family: var(--ff-display);
+  font-size: 18px;
+  letter-spacing: 1px;
+  color: var(--text);
+}
 
 /* ── COMPONENT VOCABULARY ── */
 
@@ -427,11 +432,11 @@ body.sidebar-collapsed .nav-group > .nav-group-items { display: none !important;
 }
 .page-hd-title {
   font-family: var(--ff-display);
-  font-size: 26px;
-  letter-spacing: 2px;
+  font-size: 40px;
+  letter-spacing: 3px;
   color: var(--text);
   line-height: 1;
-  margin-bottom: 4px;
+  margin-bottom: 6px;
 }
 .page-hd-sub {
   font-size: 13px;
@@ -486,11 +491,12 @@ body.sidebar-collapsed .nav-group > .nav-group-items { display: none !important;
 /* Section label */
 .section-lbl {
   font-family: var(--ff-mono);
-  font-size: 10px;
+  font-size: 11px;
   color: var(--text3);
   text-transform: uppercase;
-  letter-spacing: 1.2px;
-  margin-bottom: 8px;
+  letter-spacing: 1.8px;
+  margin-bottom: 10px;
+  font-weight: 600;
 }
 
 /* ── TASK CARDS ── */
@@ -544,11 +550,11 @@ body.sidebar-collapsed .nav-group > .nav-group-items { display: none !important;
 .task-card-body { flex: 1; min-width: 0; }
 
 .task-card-title {
-  font-size: 13px;
-  font-weight: 600;
+  font-size: 15px;
+  font-weight: 700;
   color: var(--text);
   line-height: 1.4;
-  margin-bottom: 4px;
+  margin-bottom: 6px;
 }
 
 .task-card-acs {
@@ -677,19 +683,37 @@ body.dark-theme .task-card-subtasks { background: var(--bg3); }
 
 /* ── TABS ── */
 .tabs{display:flex;border-bottom:1px solid var(--border);margin-bottom:16px;gap:0;overflow-x:auto;flex-shrink:0}
-.tab{padding:9px 16px;font-size:13px;font-family:var(--ff-mono);text-transform:uppercase;letter-spacing:.5px;color:var(--text3);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;transition:all .12s}
+.tab {
+  padding: 10px 20px;
+  font-size: 14px;
+  font-family: var(--ff-mono);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text3);
+  cursor: pointer;
+  border-bottom: 3px solid transparent;
+  white-space: nowrap;
+  transition: all .12s;
+}
 .tab:hover{color:var(--text2)}
 .tab.active {
   color: var(--olive);
   border-bottom-color: var(--olive);
-  font-weight: 600;
+  font-weight: 700;
 }
 
 /* ── DETAIL HEADER ── */
 .detail-hd{display:flex;align-items:flex-start;gap:16px;margin-bottom:20px;padding-bottom:18px;border-bottom:1px solid var(--border)}
 .detail-id{font-family:var(--ff-display);font-size:52px;letter-spacing:3px;color:var(--amber);line-height:1;flex-shrink:0}
 .detail-body{flex:1;min-width:0}
-.detail-name{font-size:20px;font-weight:600}
+.detail-name {
+  font-family: var(--ff-display);
+  font-size: 32px;
+  letter-spacing: 2px;
+  line-height: 1.1;
+  color: var(--text);
+}
 .detail-sub{font-family:var(--ff-mono);font-size:11px;color:var(--text3);margin-top:4px}
 .detail-actions{display:flex;gap:6px;flex-wrap:wrap;margin-left:auto;flex-shrink:0}
 .student-home-hero .dashboard-hero-meta{max-width:60ch}
@@ -2293,6 +2317,103 @@ body.dark-theme #wxMetarTTY { /* inherits dark card background */ }
 .procedure-traceability{font-family:var(--ff-mono);font-size:11px;color:var(--text3)}
 .procedure-related-lessons{display:flex;gap:8px;flex-wrap:wrap}
 .procedure-lesson-card{margin-bottom:16px}
+
+/* ── FLY TAB STEP NAVIGATOR ── */
+.fly-task-card {
+  display: flex;
+  gap: 16px;
+  background: var(--bg2);
+  border: 2px solid var(--olive);
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 20px;
+  min-height: 200px;
+}
+.fly-task-num {
+  width: 48px;
+  height: 48px;
+  min-width: 48px;
+  border-radius: 50%;
+  background: var(--olive);
+  color: #fff;
+  font-family: var(--ff-display);
+  font-size: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.fly-task-body { flex: 1; min-width: 0; }
+.fly-task-title {
+  font-family: var(--ff-display);
+  font-size: 28px;
+  letter-spacing: 1px;
+  color: var(--text);
+  line-height: 1.2;
+  margin-bottom: 8px;
+}
+.fly-task-acs {
+  font-family: var(--ff-mono);
+  font-size: 11px;
+  color: var(--olive-light);
+  text-decoration: none;
+  display: inline-block;
+  margin-bottom: 14px;
+}
+.fly-task-subtasks {
+  background: var(--bg3);
+  border-radius: 8px;
+  padding: 12px 14px;
+  margin-bottom: 14px;
+}
+.fly-task-controls {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+.fly-step-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 8px;
+}
+.fly-step-btn {
+  padding: 14px 28px;
+  border-radius: 8px;
+  font-family: var(--ff-display);
+  font-size: 18px;
+  letter-spacing: 1px;
+  cursor: pointer;
+  border: 2px solid var(--olive);
+  transition: all .15s;
+  min-width: 140px;
+}
+.fly-step-btn--prev {
+  background: var(--bg2);
+  color: var(--olive);
+}
+.fly-step-btn--prev:hover:not(:disabled) {
+  background: var(--olive-dim);
+}
+.fly-step-btn--next {
+  background: var(--olive);
+  color: #fff;
+}
+.fly-step-btn--next:hover:not(:disabled) {
+  background: var(--olive2);
+}
+.fly-step-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+@media (max-width: 768px) {
+  .fly-task-card { padding: 16px; }
+  .fly-task-title { font-size: 22px; }
+  .fly-step-btn { padding: 12px 20px; font-size: 16px; min-width: 110px; }
+}
+body.dark-theme .fly-task-card { background: var(--bg2); }
+body.dark-theme .fly-task-subtasks { background: var(--bg3); }
 
 /* ── LESSON BOTTOM ACTION BAR ── */
 .lesson-action-bar {
