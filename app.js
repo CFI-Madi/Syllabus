@@ -257,18 +257,13 @@ function initSidebarCollapse() {
  * The CSS media query will auto-show the button at â‰¤700px.
  */
 function toggleMobileNav() {
-  const sidebar  = document.getElementById('sidebar');
-  const overlay  = document.getElementById('sidebarOverlay');
-  const isOpen   = sidebar?.classList.toggle('open');
-  overlay?.classList.toggle('open', isOpen);
-  // Prevent body scroll while nav is open on mobile
-  document.body.style.overflow = isOpen ? 'hidden' : '';
+  const drawer = document.getElementById('mobileNavDrawer');
+  if (drawer) drawer.classList.toggle('open');
 }
 
 function closeMobileNav() {
-  document.getElementById('sidebar')?.classList.remove('open');
-  document.getElementById('sidebarOverlay')?.classList.remove('open');
-  document.body.style.overflow = '';
+  const drawer = document.getElementById('mobileNavDrawer');
+  if (drawer) drawer.classList.remove('open');
 }
 
 // Close mobile nav automatically whenever the user picks a nav item
@@ -427,6 +422,9 @@ function handleClickAction(el, event) {
       case 'toggle-dark-mode': toggleDarkMode(); break;
       case 'toggle-sidebar-collapse': toggleSidebarCollapse(); break;
       case 'toggle-nav-group': toggleNavGroup(el.dataset.group); break;
+      case 'toggle-topnav-more':
+        document.getElementById('topnavMore')?.classList.toggle('open');
+        break;
       case 'start-presolo-test': curPresoloTest=buildPresoloQuestions(); console.log('[presolo] test started, questions:',curPresoloTest.length); App.render(); document.getElementById('content')?.scrollTo(0,0); break;
       case 'cancel-presolo-test': curPresoloTest=null; App.render(); break;
       case 'mark-presolo-q': {
@@ -496,6 +494,13 @@ function bindEventActions() {
     }
     const actionEl = event.target.closest('[data-click-action]');
     if(actionEl) handleClickAction(actionEl, event);
+  });
+
+  // Close the topnav More dropdown on any click outside its wrapper
+  document.addEventListener('click', e => {
+    if (!e.target.closest('.topnav-more-wrap')) {
+      document.getElementById('topnavMore')?.classList.remove('open');
+    }
   });
 
   document.addEventListener('change', event => {
@@ -2182,6 +2187,9 @@ const App={
     if(curView === 'lesson' && !curLesson) curLesson = defaultStudentLessonId(getS());
     if(curView === 'lesson') curTab = studentSafeLessonTab(curTab);
     document.querySelectorAll('.nav-item').forEach(el=>el.classList.toggle('active',el.dataset.view===curView));
+    document.querySelectorAll('.topnav-item, .topnav-dropdown-item, .mobile-nav-item').forEach(el=>{
+      if(el.dataset.view) el.classList.toggle('active', el.dataset.view===curView);
+    });
     document.getElementById('topTitle').textContent=curView==='lesson'?(curLesson||'LESSON'):VIEWS[curView]||curView.toUpperCase();
     document.getElementById('topCrumb').textContent=curView==='lesson'?(GL[curLesson]||FL[curLesson])?.title||'':' ';
     this.render();

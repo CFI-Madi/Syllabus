@@ -1,3 +1,269 @@
+/* ── TOP NAV ── */
+:root {
+  --topnav-h: 56px;
+}
+
+#topnav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: var(--topnav-h);
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 0;
+  z-index: 200;
+  padding: 0 16px;
+  box-shadow: 0 1px 6px rgba(26,39,68,.08);
+}
+
+/* Left */
+.topnav-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+  margin-right: 20px;
+}
+.topnav-hamburger {
+  display: none;
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  color: var(--text2);
+  padding: 6px;
+  line-height: 1;
+}
+.topnav-logo {
+  display: flex;
+  flex-direction: column;
+  cursor: pointer;
+  user-select: none;
+  line-height: 1.1;
+}
+.topnav-logo-mark {
+  font-family: var(--ff-display);
+  font-size: 18px;
+  letter-spacing: 2px;
+  color: var(--text);
+}
+.topnav-logo-sub {
+  font-family: var(--ff-mono);
+  font-size: 9px;
+  color: var(--text3);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+/* Center nav links */
+.topnav-links {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex: 1;
+  overflow: hidden;
+}
+.topnav-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-family: var(--ff-mono);
+  color: var(--text3);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all .12s;
+  user-select: none;
+}
+.topnav-item:hover { background: var(--bg3); color: var(--text2); }
+.topnav-item.active {
+  background: var(--olive);
+  color: #fff;
+  font-weight: 600;
+}
+
+/* More dropdown */
+.topnav-more-wrap { position: relative; }
+.topnav-more-dropdown {
+  display: none;
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(26,39,68,.12);
+  min-width: 180px;
+  z-index: 300;
+  overflow: hidden;
+}
+.topnav-more-dropdown.open { display: block; }
+.topnav-dropdown-item {
+  padding: 10px 16px;
+  font-size: 13px;
+  font-family: var(--ff-mono);
+  color: var(--text2);
+  cursor: pointer;
+  transition: background .1s;
+}
+.topnav-dropdown-item:hover { background: var(--bg3); }
+.topnav-dropdown-item.active { color: var(--olive); font-weight: 600; }
+
+/* Right controls */
+.topnav-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  margin-left: 16px;
+}
+.topnav-search-wrap {
+  position: relative;
+}
+.topnav-search-wrap input {
+  width: 160px;
+  padding: 5px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg3);
+  font-size: 12px;
+  font-family: var(--ff-mono);
+  color: var(--text);
+  transition: width .2s;
+}
+.topnav-search-wrap input:focus { width: 220px; outline: none; border-color: var(--olive); }
+#searchResults {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  min-width: 280px;
+  z-index: 400;
+}
+.topnav-stu-wrap {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.topnav-stu-wrap select {
+  padding: 5px 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg3);
+  font-size: 12px;
+  font-family: var(--ff-mono);
+  color: var(--text);
+  max-width: 140px;
+}
+.topnav-new-stu {
+  padding: 5px 9px;
+  border: 1px solid var(--olive);
+  border-radius: 6px;
+  background: var(--olive-dim);
+  color: var(--olive);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  line-height: 1;
+  transition: all .12s;
+}
+.topnav-new-stu:hover { background: var(--olive); color: #fff; }
+.topnav-mode {
+  display: flex;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+.topnav-mode-btn {
+  padding: 5px 10px;
+  font-family: var(--ff-mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .5px;
+  background: none;
+  border: none;
+  color: var(--text3);
+  cursor: pointer;
+  transition: all .12s;
+}
+.topnav-mode-btn.active { background: var(--olive); color: #fff; }
+.topnav-autosave {
+  font-family: var(--ff-mono);
+  font-size: 10px;
+  color: var(--green);
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity .3s;
+}
+.topnav-autosave:not(:empty) { opacity: 1; }
+.topnav-icon-btn {
+  padding: 6px 8px;
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text3);
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  transition: all .12s;
+  display: inline-flex;
+  align-items: center;
+}
+.topnav-icon-btn:hover { background: var(--bg3); color: var(--text); }
+
+/* Main content offset */
+#main {
+  margin-left: 0 !important;
+  padding-top: var(--topnav-h);
+}
+/* Remove old sidebar-dependent rules */
+#sidebar { display: none !important; }
+#sidebarOverlay { display: none !important; }
+
+/* Mobile nav drawer */
+#mobileNavDrawer {
+  display: none;
+  position: fixed;
+  top: var(--topnav-h);
+  left: 0;
+  right: 0;
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  z-index: 199;
+  box-shadow: 0 4px 16px rgba(26,39,68,.12);
+  max-height: calc(100vh - var(--topnav-h));
+  overflow-y: auto;
+}
+#mobileNavDrawer.open { display: block; }
+.mobile-nav-item {
+  padding: 14px 20px;
+  font-size: 15px;
+  font-family: var(--ff-mono);
+  color: var(--text2);
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+}
+.mobile-nav-item:hover { background: var(--bg3); }
+.mobile-nav-item.active { color: var(--olive); font-weight: 700; }
+
+/* Mobile breakpoint */
+@media (max-width: 768px) {
+  .topnav-links { display: none; }
+  .topnav-hamburger { display: flex; }
+  .topnav-search-wrap { display: none; }
+  .topnav-right { gap: 4px; }
+  .topnav-stu-wrap select { max-width: 100px; }
+}
+
+/* Dark theme */
+body.dark-theme #topnav { background: var(--bg2); border-bottom-color: var(--border); }
+body.dark-theme #mobileNavDrawer { background: var(--bg2); }
+body.dark-theme .topnav-more-dropdown { background: var(--bg2); }
+
 /* ── VFR SECTIONAL THEME ──────────────────────────────────────────────
    Palette inspired by VFR sectional charts:
    parchment backgrounds · magenta primary (Class C/D) · navy text
