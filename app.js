@@ -396,6 +396,10 @@ function handleClickAction(el, event) {
       document.getElementById('tabContent').innerHTML = V.lessonTab(curLesson, getS(), 'fly');
       break;
     }
+    case 'task-step-jump':
+      curTaskStep = parseInt(el.dataset.step, 10) || 0;
+      document.getElementById('tabContent').innerHTML = V.lessonTab(curLesson, getS(), 'fly');
+      break;
     case 'toggle-display': toggleElementDisplay(el.dataset.targetId); break;
     case 'toggle-wi':
       event.stopPropagation();
@@ -4452,22 +4456,31 @@ ${lesson.isStageCheck?'<div style="font-family:var(--ff-mono);font-size:10px;col
     const acsHref = `${ACS_URL}#page=${acsPage}`;
     const hasS = !!s;
 
-    // Progress dots
-    const dots = tasks.map((t, i) => {
-      const tts = getTStatus(s, lid, t.id);
-      const color = tts === 'signed_off' ? 'var(--green)'
-        : tts === 'needs_review' ? 'var(--red)'
-        : tts !== 'not_started' ? 'var(--olive-light)'
-        : 'var(--border2)';
-      return `<div style="width:${i === step ? 20 : 8}px;height:8px;border-radius:4px;background:${i === step ? 'var(--olive)' : color};transition:all .2s;flex-shrink:0"></div>`;
-    }).join('');
-
     return `
-    <!-- Step counter + progress -->
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
-      <div style="font-family:var(--ff-display);font-size:13px;letter-spacing:2px;color:var(--text3)">TASK ${step + 1} OF ${total}</div>
-      <div style="display:flex;gap:4px;align-items:center">${dots}</div>
+    <!-- Task picker row -->
+    <div class="fly-task-picker">
+      ${tasks.map((t, i) => {
+        const tts = getTStatus(s, lid, t.id);
+        const isActive = i === step;
+        const dotColor = tts === 'signed_off' ? 'var(--green)'
+          : tts === 'needs_review' ? 'var(--red)'
+          : tts !== 'not_started' ? 'var(--olive-light)'
+          : 'var(--border2)';
+        return `<button class="fly-picker-tile${isActive?' fly-picker-tile--active':''}"
+          data-click-action="task-step-jump"
+          data-step="${i}"
+          style="${isActive?'border-color:var(--olive);background:var(--olive);color:#fff':'border-color:'+dotColor}">
+          <span class="fly-picker-num" style="${isActive?'background:rgba(255,255,255,0.25);color:#fff':'background:'+dotColor+';color:#fff'}">${i+1}</span>
+          <span class="fly-picker-text">${t.text}</span>
+          <span class="fly-picker-status" style="background:${isActive?'rgba(255,255,255,0.2)':dotColor==='var(--border2)'?'var(--bg3)':dotColor+'22'};color:${isActive?'#fff':dotColor==='var(--border2)'?'var(--text3)':dotColor}">${
+            tts==='signed_off'?'✓':tts==='needs_review'?'!':tts==='proficient'?'G':tts==='practiced'?'P':tts==='introduced'?'I':'–'
+          }</span>
+        </button>`;
+      }).join('')}
     </div>
+
+    <!-- Current task label -->
+    <div style="font-family:var(--ff-display);font-size:13px;letter-spacing:2px;color:var(--text3);margin-bottom:16px">TASK ${step + 1} OF ${total}</div>
 
     <!-- Main task card — large format -->
     <div class="fly-task-card">
@@ -4483,7 +4496,7 @@ ${lesson.isStageCheck?'<div style="font-family:var(--ff-mono);font-size:10px;col
           ${task.subtasks.map((sub, i) => {
             const checked = checks[i] || false;
             return `
-            <label style="display:flex;align-items:center;gap:16px;padding:14px 0;cursor:${hasS?'pointer':'default'};border-bottom:1px solid var(--border);min-height:52px">
+            <label style="display:flex;align-items:center;gap:14px;padding:12px 14px;cursor:${hasS?'pointer':'default'};border-bottom:1px solid var(--border);min-height:52px;width:100%;box-sizing:border-box">
               <div style="position:relative;width:28px;height:28px;min-width:28px;border-radius:6px;border:2px solid ${checked?'var(--green)':'var(--border2)'};background:${checked?'var(--green)':'var(--bg2)'};display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s">
                 ${checked?'<span style="color:#fff;font-size:16px;font-weight:700">✓</span>':''}
                 <input type="checkbox" ${checked?'checked':''} ${!hasS?'disabled':''} id="stcb_${lid}_${task.id}_${i}" data-change-action="set-subtask" data-lid="${lid}" data-tid="${task.id}" data-idx="${i}" style="position:absolute;opacity:0;width:28px;height:28px;cursor:${hasS?'pointer':'default'}">
