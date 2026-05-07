@@ -5941,6 +5941,13 @@ Live browser fetch is disabled because Aviation Weather Center blocks cross-orig
             <input class="finput" id="perf_runway_len" type="number" step="1" value="6020" data-input-action="calc-performance">
           </div>
           <div class="fg" style="margin:0">
+            <label>Wind Component (kt)</label>
+            <input class="finput" id="perf_wind" type="number" step="1" placeholder="+ headwind, − tailwind" data-input-action="calc-performance">
+            <div style="font-family:var(--ff-mono);font-size:10px;color:var(--text3);margin-top:3px">
+              Positive = headwind. Negative = tailwind. Leave blank = no wind.
+            </div>
+          </div>
+          <div class="fg" style="margin:0">
             <label>Runway Surface</label>
             <select class="fselect" id="perf_surface" data-input-action="calc-performance" data-change-action="calc-performance">
               <option value="paved-dry">Paved / Dry</option>
@@ -6613,8 +6620,16 @@ function calcPerformance() {
   const takeoffModifiers = data.takeoff.modifiers.length ? data.takeoff.modifiers : ['No major modifier flagged'];
   const landingModifiers = data.landing.modifiers.length ? data.landing.modifiers : ['No major modifier flagged'];
   const currentWeight = data.wb?.hasLoadData ? data.wb.totalWeight : null;
-  const takeoffFactor = daFactor(data.densityAltitude) * weightFactor(currentWeight) * surfaceFactor(document.getElementById('perf_surface')?.value || '');
-  const landingFactor = daFactor(data.densityAltitude) * weightFactor(currentWeight) * surfaceFactor(document.getElementById('perf_surface')?.value || '');
+  const windKt = readNumber('perf_wind') || 0;
+  // Rule of thumb: headwind reduces ground roll ~1% per kt; tailwind increases ~5% per kt.
+  // Tailwind penalized harder per CFI/POH short-field guidance. Clamp to keep linear model sane.
+  const windFactor = (() => {
+    if (windKt > 0) return Math.max(0.5, 1 - windKt * 0.01);
+    if (windKt < 0) return Math.min(2.0, 1 + Math.abs(windKt) * 0.05);
+    return 1.0;
+  })();
+  const takeoffFactor = daFactor(data.densityAltitude) * weightFactor(currentWeight) * surfaceFactor(document.getElementById('perf_surface')?.value || '') * windFactor;
+  const landingFactor = daFactor(data.densityAltitude) * weightFactor(currentWeight) * surfaceFactor(document.getElementById('perf_surface')?.value || '') * windFactor;
   const estimatedTakeoffGround = Math.round(PERFORMANCE_BASELINE.takeoff.ground * takeoffFactor);
   const estimatedTakeoff50 = Math.round(PERFORMANCE_BASELINE.takeoff.over50 * takeoffFactor);
   const estimatedLandingGround = Math.round(PERFORMANCE_BASELINE.landing.ground * landingFactor);
