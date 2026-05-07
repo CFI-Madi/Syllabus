@@ -4390,19 +4390,21 @@ ${lesson.isStageCheck?'<div style="font-family:var(--ff-mono);font-size:10px;col
   tabPlan(lid,s){
     const lesson=GL[lid]||FL[lid];
     if(!lesson) return '';
+    const isFL=!!FL[lid];
     return `
       <div class="tab-section">
-        <div class="section-lbl">Objectives</div>
+        <div class="section-lbl">Brief</div>
         ${this.tabObjectives(lid,s)}
       </div>
       <div class="tab-section" style="margin-top:18px">
         <div class="section-lbl">Scenario</div>
         ${this.tabScenario(lid,s)}
       </div>
+      ${isFL ? `
       <div class="tab-section" style="margin-top:18px">
-        <div class="section-lbl">Tasks</div>
-        ${this.tabTasks(lid,s)}
-      </div>`;
+        <div class="section-lbl">5P Pre-Flight Check</div>
+        ${this.tabSRM(lid,s)}
+      </div>` : ''}`;
   },
 
   tabFly(lid,s){
@@ -4412,16 +4414,11 @@ ${lesson.isStageCheck?'<div style="font-family:var(--ff-mono);font-size:10px;col
     if(isFL){
       return `
         <div class="tab-section">
-          <div class="section-lbl">5P Pre-Brief</div>
-          ${this.tabSRM(lid,s)}
-        </div>
-        <div class="tab-section" style="margin-top:18px">
-          <div class="section-lbl">Live Task Grading</div>
           ${this.tabTasks(lid,s)}
         </div>`;
     }
     return `
-      <div class="section-lbl" style="margin-bottom:10px">Ground Lesson — no 5P pre-brief</div>
+      <div class="section-lbl" style="margin-bottom:10px">Ground Lesson — task review</div>
       ${this.tabTasks(lid,s)}`;
   },
 
