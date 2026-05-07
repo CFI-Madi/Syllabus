@@ -2438,7 +2438,6 @@ const App={
     }
     this.nav(studentSafeView(curView));
   },
-  openLesson(lid){ this.nav('lesson', lid); },
   openProcedure(pid){
     curProcedureId = PROCEDURES_BY_ID[pid] ? pid : AIRCRAFT_PROCEDURES[0]?.id || null;
     this.nav('procedures');
