@@ -27,6 +27,43 @@ import {
 } from './poh-reference.js';
 
 // â”€â”€â”€ STORE KEYS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// HANDBOOK CHAPTER LINKS
+// Both PHAK and AFH are published as a "full PDF" plus per-chapter PDFs.
+// Linking to per-chapter PDFs avoids #page=N math against the full book —
+// page numbers shift when the FAA reissues, chapter file URLs don't.
+//
+// PHAK (FAA-H-8083-25C, 2023): file index = chapter + 2
+//   ch 1 -> 03_phak_ch1.pdf, ch 5 -> 07_phak_ch5.pdf, ch 17 -> 19_phak_ch17.pdf
+// AFH  (FAA-H-8083-3C):       file index = chapter + 1
+//   ch 1 -> 02_afh_ch1.pdf,  ch 6 -> 07_afh_ch6.pdf, ch 18 -> 19_afh_ch18.pdf
+const PHAK_BASE = 'https://www.faa.gov/sites/faa.gov/files/regulations_policies/handbooks_manuals/aviation/phak';
+const AFH_BASE  = 'https://www.faa.gov/sites/faa.gov/files/regulations_policies/handbooks_manuals/aviation/airplane_handbook';
+
+// AFH-3C reorganized chapters from earlier editions.
+// The syllabus textRefs use the OLD numbering; remap to current AFH-3C
+// chapter that contains the same content so the link lands on the right page.
+const AFH_CH_REMAP = {
+  2: 2,   // Ground Operations              (unchanged)
+  3: 3,   // Basic Flight Maneuvers          (unchanged)
+  4: 5,   // Slow Flight, Stalls, Spins      -> Maintaining Aircraft Control: UPRT
+  5: 6,   // Takeoffs and Departure Climbs   (was ch 5)
+  6: 7,   // Ground Reference Maneuvers      (was ch 6)
+  7: 8,   // Airport Traffic Patterns        (was ch 7)
+  8: 9,   // Approaches and Landings         (was ch 8)
+  9: 10,  // Performance Maneuvers           (was ch 9)
+  10: 11, // Night Operations                (was ch 10)
+  17: 18  // Emergency Procedures            (was ch 17)
+};
+
+const _pad2 = n => String(n).padStart(2, '0');
+function phakChapterUrl(n) {
+  return `${PHAK_BASE}/${_pad2(n + 2)}_phak_ch${n}.pdf`;
+}
+function afhChapterUrl(syllabusN) {
+  const n = AFH_CH_REMAP[syllabusN] || syllabusN;
+  return `${AFH_BASE}/${_pad2(n + 1)}_afh_ch${n}.pdf`;
+}
+
 const STORE     = 'charlotteaviation_v1'; // â† bump version here on schema changes
 const CFI_STORE = 'charlotteaviation_cfi';
 const DARK_STORE     = 'charlotteaviation_darkmode';
@@ -1364,10 +1401,10 @@ const H={
 
     const readings=[];
     Array.from(phakSeen).sort((a,b)=>a-b).forEach(function(n){
-      readings.push({src:'PHAK',title:`Chapter ${n}${PHAK_CH[n] ? ' - ' + PHAK_CH[n] : ''}`,url:REF_URLS.PHAK,color:'var(--amber)'});
+      readings.push({src:'PHAK',title:`Chapter ${n}${PHAK_CH[n] ? ' - ' + PHAK_CH[n] : ''}`,url:phakChapterUrl(n),color:'var(--amber)'});
     });
     Array.from(afhSeen).sort((a,b)=>a-b).forEach(function(n){
-      readings.push({src:'AFH',title:`Chapter ${n}${AFH_CH[n] ? ' - ' + AFH_CH[n] : ''}`,url:REF_URLS.AFH,color:'var(--blue)'});
+      readings.push({src:'AFH',title:`Chapter ${n}${AFH_CH[n] ? ' - ' + AFH_CH[n] : ''}`,url:afhChapterUrl(n),color:'var(--blue)'});
     });
     if(aimSeen.size) readings.push({src:'AIM',title:'Aeronautical Information Manual',url:REF_URLS.AIM,color:'var(--green)'});
     Array.from(cfrSeen).sort().forEach(function(code){
@@ -3570,6 +3607,10 @@ const V={
       const phakMatch=textRef.match(/PHAK\s+(Ch\.\d+)/);
       const afhMatch=textRef.match(/AFH\s+(Ch\.\d+)/);
       const aimMatch=textRef.match(/AIM/);
+      const phakChNum=phakMatch?parseInt(phakMatch[1].replace('Ch.',''),10):null;
+      const afhChNum =afhMatch ?parseInt(afhMatch[1].replace('Ch.',''),10):null;
+      const phakHref =phakChNum?phakChapterUrl(phakChNum):REF_URLS.PHAK;
+      const afhHref  =afhChNum ?afhChapterUrl(afhChNum) :REF_URLS.AFH;
       return`
       <div class="task-card task-card--${ts}">
         <!-- Full-width tap target — no links inside -->
@@ -3591,8 +3632,8 @@ const V={
           ${(acsCode||phakMatch||afhMatch||aimMatch||textRef)?`
           <div style="display:flex;gap:6px;flex-wrap:wrap;padding:8px 14px;border-bottom:1px solid var(--border)">
             ${acsCode?`<a href="${acsHref}" target="_blank" class="acs-tag">ACS ${acsCode}</a>`:''}
-            ${phakMatch?`<a href="${REF_URLS.PHAK}" target="_blank" class="task-ref" style="text-decoration:none;color:var(--blue)">PHAK Ch.${phakMatch[1].replace('Ch.','')}</a>`:''}
-            ${afhMatch?`<a href="${REF_URLS.AFH}" target="_blank" class="task-ref" style="text-decoration:none;color:var(--blue)">AFH Ch.${afhMatch[1].replace('Ch.','')}</a>`:''}
+            ${phakMatch?`<a href="${phakHref}" target="_blank" class="task-ref" style="text-decoration:none;color:var(--blue)">PHAK Ch.${phakChNum}</a>`:''}
+            ${afhMatch?`<a href="${afhHref}" target="_blank" class="task-ref" style="text-decoration:none;color:var(--blue)">AFH Ch.${afhChNum}</a>`:''}
             ${aimMatch?`<a href="${REF_URLS.AIM}" target="_blank" class="task-ref" style="text-decoration:none;color:var(--blue)">AIM</a>`:''}
             ${textRef&&!phakMatch&&!afhMatch&&!aimMatch?`<span class="task-ref">${textRef}</span>`:''}
           </div>`:''}
