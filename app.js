@@ -6034,7 +6034,7 @@ const CHEROKEE_WB_PROFILE = {
     { id:'frontSeats', label:'Front Seats', arm:85.5, placeholder:'lbs - combined crew/passengers' },
     { id:'aftSeats', label:'Aft Seats', arm:117.0, placeholder:'lbs - combined passengers' },
     { id:'baggage', label:'Baggage', arm:142.8, maxWeight:200, placeholder:'lbs - max 200' },
-    { id:'fuel', label:'Fuel (Avgas 6 lbs/gal)', arm:95.0, maxWeight:297.8, placeholder:'lbs - full = 297.8' }
+    { id:'fuel', label:'Fuel (Avgas 6 lbs/gal)', arm:95.0, maxWeight:297.8, placeholder:'lbs - full = 216 (std), 297.8 (LR)' }
   ],
   forwardLimits: [
     [1200, 84.0],
