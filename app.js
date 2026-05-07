@@ -3585,63 +3585,59 @@ const V={
       const aimMatch=textRef.match(/AIM/);
       return`
       <div class="task-card task-card--${ts}">
-        <div class="task-card-num">${idx+1}</div>
-        <div class="task-card-body">
-          <!-- Title row — clickable to expand subtasks -->
-          <div style="cursor:pointer;display:flex;align-items:flex-start;justify-content:space-between;gap:6px"
-               data-click-action="toggle-task" data-lid="${lid}" data-tid="${task.id}">
-            <div class="task-card-title">${task.text}</div>
-            <span id="ticon_${lid}_${task.id}" style="font-size:11px;color:var(--text3);flex-shrink:0;margin-top:2px">${expanded?'▴':'▾'}</span>
+        <!-- Full-width tap target — no links inside -->
+        <div style="display:flex;align-items:center;gap:12px;padding:14px 14px;cursor:pointer;min-height:52px" data-click-action="toggle-task" data-lid="${lid}" data-tid="${task.id}">
+          <div id="ticon_${lid}_${task.id}" style="width:32px;height:32px;min-width:32px;border-radius:50%;background:${ts==='signed_off'?'var(--green)':ts==='needs_review'?'var(--red)':'var(--olive)'};color:#fff;font-family:var(--ff-display);font-size:16px;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+            ${expanded ? '▴' : '▾'}
           </div>
-          <!-- ACS ref -->
-          ${acsCode?`<div class="task-card-acs">
-            <a href="${acsHref}" target="_blank" data-stop-prop="true" style="color:var(--olive-light);text-decoration:none">ACS ${acsCode}</a>
-            ${subTotal>0?`<span id="tprog_${lid}_${task.id}" class="task-card-prog">${subDone}/${subTotal}</span>`:''}
-          </div>`:''}
-          <!-- Text refs -->
-          ${(phakMatch||afhMatch||aimMatch||(textRef&&!phakMatch&&!afhMatch&&!aimMatch))?`
-          <div class="task-card-refs">
-            ${phakMatch?`<a href="${REF_URLS.PHAK}" target="_blank" class="task-ref" style="text-decoration:none;color:var(--blue)" data-stop-prop="true">PHAK Ch.${phakMatch[1].replace('Ch.','')}</a>`:''}
-            ${afhMatch?`<a href="${REF_URLS.AFH}" target="_blank" class="task-ref" style="text-decoration:none;color:var(--blue)" data-stop-prop="true">AFH Ch.${afhMatch[1].replace('Ch.','')}</a>`:''}
-            ${aimMatch?`<a href="${REF_URLS.AIM}" target="_blank" class="task-ref" style="text-decoration:none;color:var(--blue)" data-stop-prop="true">AIM</a>`:''}
+          <div style="flex:1;min-width:0">
+            <div style="font-size:14px;font-weight:600;color:var(--text);line-height:1.3">${task.text}</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
+            ${subTotal>0?`<span id="tprog_${lid}_${task.id}" style="font-family:var(--ff-mono);font-size:11px;color:var(--text3);background:var(--bg3);padding:2px 7px;border-radius:8px;border:1px solid var(--border)">${subDone}/${subTotal}</span>`:''}
+            <span id="tsbadge_${lid}_${task.id}" class="sbadge s-${ts}">${{not_started:'Not Started',introduced:'Introduced',practiced:'Practiced',proficient:'Proficient',needs_review:'Needs Review',signed_off:'Signed Off'}[ts]}</span>
+          </div>
+        </div>
+        <!-- Subtask panel (expanded) -->
+        <div id="subtasks_${lid}_${task.id}" style="display:${expanded?'block':'none'};border-top:1px solid var(--border);background:var(--bg3)">
+          <!-- Reference links now live here, not in the tap target -->
+          ${(acsCode||phakMatch||afhMatch||aimMatch||textRef)?`
+          <div style="display:flex;gap:6px;flex-wrap:wrap;padding:8px 14px;border-bottom:1px solid var(--border)">
+            ${acsCode?`<a href="${acsHref}" target="_blank" class="acs-tag">ACS ${acsCode}</a>`:''}
+            ${phakMatch?`<a href="${REF_URLS.PHAK}" target="_blank" class="task-ref" style="text-decoration:none;color:var(--blue)">PHAK Ch.${phakMatch[1].replace('Ch.','')}</a>`:''}
+            ${afhMatch?`<a href="${REF_URLS.AFH}" target="_blank" class="task-ref" style="text-decoration:none;color:var(--blue)">AFH Ch.${afhMatch[1].replace('Ch.','')}</a>`:''}
+            ${aimMatch?`<a href="${REF_URLS.AIM}" target="_blank" class="task-ref" style="text-decoration:none;color:var(--blue)">AIM</a>`:''}
             ${textRef&&!phakMatch&&!afhMatch&&!aimMatch?`<span class="task-ref">${textRef}</span>`:''}
           </div>`:''}
-          <!-- Subtask panel (expanded) -->
-          <div id="subtasks_${lid}_${task.id}" style="display:${expanded?'block':'none'}">
-            ${task.subtasks&&task.subtasks.length>0?`
-            <div class="task-card-subtasks">
-              <div class="task-card-subtask-hd">Checklist ${subDone===subTotal&&subTotal>0?'<span style="color:var(--green)">✓ Complete</span>':subDone+'/'+subTotal}</div>
-              ${task.subtasks.map((sub,i)=>{
-                const checked=checks[i]||false;
-                return`<label style="display:flex;align-items:flex-start;gap:8px;padding:5px 0;cursor:${hasS?'pointer':'default'};border-bottom:1px solid var(--border);font-size:12px;color:${checked?'var(--text3)':'var(--text2)'}">
-                  <input type="checkbox" ${checked?'checked':''} ${!hasS?'disabled':''} id="stcb_${lid}_${task.id}_${i}" data-change-action="set-subtask" data-lid="${lid}" data-tid="${task.id}" data-idx="${i}" style="margin-top:2px;flex-shrink:0;accent-color:var(--olive);width:14px;height:14px">
-                  <span style="${checked?'text-decoration:line-through':''}">${sub}</span>
-                </label>`;
-              }).join('')}
+          ${task.subtasks&&task.subtasks.length>0?`
+          <div style="padding:10px 14px">
+            <div class="task-card-subtask-hd" style="margin-bottom:8px">Checklist ${subDone===subTotal&&subTotal>0?'<span style="color:var(--green)">✓ Complete</span>':subDone+'/'+subTotal}</div>
+            ${task.subtasks.map((sub,i)=>{
+              const checked=checks[i]||false;
+              return`<label style="display:flex;align-items:flex-start;gap:8px;padding:5px 0;cursor:${hasS?'pointer':'default'};border-bottom:1px solid var(--border);font-size:12px;color:${checked?'var(--text3)':'var(--text2)'}">
+                <input type="checkbox" ${checked?'checked':''} ${!hasS?'disabled':''} id="stcb_${lid}_${task.id}_${i}" data-change-action="set-subtask" data-lid="${lid}" data-tid="${task.id}" data-idx="${i}" style="margin-top:2px;flex-shrink:0;accent-color:var(--olive);width:14px;height:14px">
+                <span style="${checked?'text-decoration:line-through':''}">${sub}</span>
+              </label>`;
+            }).join('')}
+          </div>`:''}
+          <!-- Controls: status select + grades -->
+          ${hasS?`
+          <div style="padding:10px 14px;border-top:1px solid var(--border);background:var(--bg2)">
+            <div style="margin-bottom:8px">
+              <select class="fselect s-${ts}" data-change-action="set-task-status" data-lid="${lid}" data-tid="${task.id}" style="font-size:12px;padding:4px 8px;width:100%">
+                ${[{v:'not_started',l:'Not Started'},{v:'introduced',l:'Introduced'},{v:'practiced',l:'Practiced'},{v:'proficient',l:'Proficient'},{v:'needs_review',l:'Needs Review'},{v:'signed_off',l:'Signed Off'}].map(x=>`<option value="${x.v}"${ts===x.v?' selected':''}>${x.l}</option>`).join('')}
+              </select>
+            </div>
+            ${isFL?`
+            <div class="task-grade-row" style="margin-bottom:6px">
+              <span class="task-grade-lbl">Stu</span>
+              <span id="sg_${lid}_${task.id}">${H.gradeButtons(lid,task.id,'student',sg)}</span>
+            </div>
+            <div class="task-grade-row">
+              <span class="task-grade-lbl">CFI</span>
+              <span id="ig_${lid}_${task.id}">${H.gradeButtons(lid,task.id,'instructor',ig)}</span>
             </div>`:''}
-            <!-- Controls: status select + grades -->
-            ${hasS?`
-            <div class="task-card-controls">
-              <div>
-                <select class="fselect s-${ts}" data-change-action="set-task-status" data-lid="${lid}" data-tid="${task.id}" style="font-size:12px;padding:4px 8px;width:100%">
-                  ${[{v:'not_started',l:'Not Started'},{v:'introduced',l:'Introduced'},{v:'practiced',l:'Practiced'},{v:'proficient',l:'Proficient'},{v:'needs_review',l:'Needs Review'},{v:'signed_off',l:'Signed Off'}].map(x=>`<option value="${x.v}"${ts===x.v?' selected':''}>${x.l}</option>`).join('')}
-                </select>
-              </div>
-              ${isFL?`
-              <div class="task-grade-row">
-                <span class="task-grade-lbl">Stu</span>
-                <span id="sg_${lid}_${task.id}">${H.gradeButtons(lid,task.id,'student',sg)}</span>
-              </div>
-              <div class="task-grade-row">
-                <span class="task-grade-lbl">CFI</span>
-                <span id="ig_${lid}_${task.id}">${H.gradeButtons(lid,task.id,'instructor',ig)}</span>
-              </div>`:''}
-            </div>`:''}
-          </div>
-          <!-- Status badge (always visible) -->
-          <div style="margin-top:6px">
-            <span id="tsbadge_${lid}_${task.id}" class="sbadge s-${ts}">${{not_started:'Not Started',introduced:'Introduced',practiced:'Practiced',proficient:'Proficient',needs_review:'Review',signed_off:'✓ Signed Off'}[ts]||ts}</span>
-          </div>
+          </div>`:''}
         </div>
       </div>`;
     }).join('')}
@@ -4479,9 +4475,13 @@ ${lesson.isStageCheck?'<div style="font-family:var(--ff-mono);font-size:10px;col
           <div class="task-card-subtask-hd">Checklist ${subDone === subTotal ? '<span style="color:var(--green)">✓ All Complete</span>' : subDone + '/' + subTotal}</div>
           ${task.subtasks.map((sub, i) => {
             const checked = checks[i] || false;
-            return `<label style="display:flex;align-items:flex-start;gap:10px;padding:8px 0;cursor:${hasS ? 'pointer' : 'default'};border-bottom:1px solid var(--border);font-size:14px;color:${checked ? 'var(--text3)' : 'var(--text2)'}">
-              <input type="checkbox" ${checked ? 'checked' : ''} ${!hasS ? 'disabled' : ''} id="stcb_${lid}_${task.id}_${i}" data-change-action="set-subtask" data-lid="${lid}" data-tid="${task.id}" data-idx="${i}" style="margin-top:3px;flex-shrink:0;accent-color:var(--olive);width:18px;height:18px">
-              <span style="${checked ? 'text-decoration:line-through' : ''}">${sub}</span>
+            return `
+            <label style="display:flex;align-items:center;gap:16px;padding:14px 0;cursor:${hasS?'pointer':'default'};border-bottom:1px solid var(--border);min-height:52px">
+              <div style="position:relative;width:28px;height:28px;min-width:28px;border-radius:6px;border:2px solid ${checked?'var(--green)':'var(--border2)'};background:${checked?'var(--green)':'var(--bg2)'};display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s">
+                ${checked?'<span style="color:#fff;font-size:16px;font-weight:700">✓</span>':''}
+                <input type="checkbox" ${checked?'checked':''} ${!hasS?'disabled':''} id="stcb_${lid}_${task.id}_${i}" data-change-action="set-subtask" data-lid="${lid}" data-tid="${task.id}" data-idx="${i}" style="position:absolute;opacity:0;width:28px;height:28px;cursor:${hasS?'pointer':'default'}">
+              </div>
+              <span style="font-size:16px;line-height:1.4;color:${checked?'var(--text3)':'var(--text)'};${checked?'text-decoration:line-through':''};">${sub}</span>
             </label>`;
           }).join('')}
         </div>` : ''}

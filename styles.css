@@ -514,10 +514,7 @@ body.sidebar-collapsed .nav-group > .nav-group-items { display: none !important;
   background: var(--bg2);
   border: 1px solid var(--border);
   border-radius: 10px;
-  padding: 14px 14px 12px;
-  display: flex;
-  gap: 12px;
-  align-items: flex-start;
+  display: block;
   transition: border-color .15s, box-shadow .15s;
   position: relative;
   overflow: hidden;
@@ -579,11 +576,12 @@ body.sidebar-collapsed .nav-group > .nav-group-items { display: none !important;
 }
 .task-card-subtask-hd {
   font-family: var(--ff-mono);
-  font-size: 9px;
+  font-size: 11px;
   color: var(--text3);
   text-transform: uppercase;
-  letter-spacing: 1px;
-  margin-bottom: 6px;
+  letter-spacing: 1.5px;
+  padding: 12px 0 4px;
+  font-weight: 600;
 }
 
 .task-card-controls {
@@ -2361,10 +2359,11 @@ body.dark-theme #wxMetarTTY { /* inherits dark card background */ }
   margin-bottom: 14px;
 }
 .fly-task-subtasks {
-  background: var(--bg3);
-  border-radius: 8px;
-  padding: 12px 14px;
-  margin-bottom: 14px;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 4px 16px;
+  margin-bottom: 16px;
 }
 .fly-task-controls {
   margin-top: 14px;
