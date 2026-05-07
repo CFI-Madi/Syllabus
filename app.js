@@ -3862,7 +3862,11 @@ const V={
         </div>
         <div class="lesson-action-bar-right">
           ${s&&status!=='signed_off'?`<button class="btn btn-green btn-sm" data-click-action="sign-off" data-lid="${lid}">✓ Sign Off</button>`:''}
-          ${s&&status==='signed_off'?`<span class="sbadge s-signed_off" style="padding:4px 10px">✓ Signed Off</span>`:''}
+          ${s&&status==='signed_off'?(()=>{
+            const signedDate=s.data?.lessonSignOffDates?.[lid];
+            const dateStr=signedDate?new Date(signedDate).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}):'';
+            return `<span class="sbadge s-signed_off" style="padding:4px 10px">✓ Signed Off${dateStr?' · '+dateStr:''}</span>`;
+          })():''}
         </div>
       </div>`:''}`;
   },
