@@ -6142,11 +6142,18 @@ function parseMetarWind(metar) {
   // Regex: optional VRB or 3-digit dir, 2-digit speed, optional Gxx, KT or MPS
   const m = metar.match(/\b(VRB|\d{3})(\d{2,3})(?:G(\d{2,3}))?(KT|MPS)\b/);
   if(!m) return null;
+  let speed = parseInt(m[2], 10);
+  let gust  = m[3] ? parseInt(m[3], 10) : null;
+  const unit = m[4];
+  if (unit === 'MPS') {
+    speed = Math.round(speed * 1.94384);
+    if (gust !== null) gust = Math.round(gust * 1.94384);
+  }
   return {
-    dir  : m[1],                              // '270' or 'VRB'
-    speed: parseInt(m[2], 10),                // knots (or m/s if MPS - rare)
-    gust : m[3] ? parseInt(m[3], 10) : null,  // gust speed or null
-    unit : m[4]                               // 'KT' or 'MPS'
+    dir  : m[1],   // '270' or 'VRB'
+    speed,         // knots (converted from MPS if needed)
+    gust,          // knots or null
+    unit           // 'KT' or 'MPS' (preserved for traceability)
   };
 }
 
