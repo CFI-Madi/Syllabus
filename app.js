@@ -4702,27 +4702,27 @@ ${lesson.isStageCheck?'<div style="font-family:var(--ff-mono);font-size:10px;col
       </div>
       <div class="debrief-card">
         <div class="section-label">What went well</div>
-        <textarea class="ftextarea debrief-textarea" id="debrief_wentwell_${lid}" placeholder="Short bullets or one item per line.">${debrief.wentWell}</textarea>
+        <textarea class="ftextarea debrief-textarea" id="debrief_wentwell_${lid}" placeholder="Short bullets or one item per line.">${H.escapeHtml(debrief.wentWell||'')}</textarea>
       </div>
       <div class="debrief-card">
         <div class="section-label">Needs work</div>
-        <textarea class="ftextarea debrief-textarea" id="debrief_needswork_${lid}" placeholder="What needs more practice before moving on?">${debrief.needsWork}</textarea>
+        <textarea class="ftextarea debrief-textarea" id="debrief_needswork_${lid}" placeholder="What needs more practice before moving on?">${H.escapeHtml(debrief.needsWork||'')}</textarea>
       </div>
       <div class="debrief-card">
         <div class="section-label">Review before next lesson</div>
-        <textarea class="ftextarea debrief-textarea" id="debrief_review_${lid}" placeholder="List the items to review before the next lesson.">${debrief.reviewBeforeNext}</textarea>
+        <textarea class="ftextarea debrief-textarea" id="debrief_review_${lid}" placeholder="List the items to review before the next lesson.">${H.escapeHtml(debrief.reviewBeforeNext||'')}</textarea>
       </div>
       <div class="debrief-card">
         <div class="section-label">Next lesson focus</div>
-        <textarea class="ftextarea debrief-textarea" id="debrief_next_${lid}" placeholder="What should the next lesson focus on?">${debrief.nextLessonFocus}</textarea>
+        <textarea class="ftextarea debrief-textarea" id="debrief_next_${lid}" placeholder="What should the next lesson focus on?">${H.escapeHtml(debrief.nextLessonFocus||'')}</textarea>
       </div>
       <div class="debrief-card">
         <div class="section-label">Homework emphasis</div>
-        <textarea class="ftextarea debrief-textarea" id="debrief_homework_${lid}" placeholder="Student-facing homework emphasis or prep note.">${debrief.homeworkEmphasis}</textarea>
+        <textarea class="ftextarea debrief-textarea" id="debrief_homework_${lid}" placeholder="Student-facing homework emphasis or prep note.">${H.escapeHtml(debrief.homeworkEmphasis||'')}</textarea>
       </div>
     </div>
     <div class="section-label" style="margin-top:10px">${isFL?'Post-flight ':''}Instructor notes</div>
-    <textarea class="ftextarea" id="lesson_note" placeholder="Optional instructor-only note, carry-forward item, or lesson-specific detail.">${note}</textarea>
+    <textarea class="ftextarea" id="lesson_note" placeholder="Optional instructor-only note, carry-forward item, or lesson-specific detail.">${H.escapeHtml(note||'')}</textarea>
     <button class="btn btn-primary btn-sm" style="margin-top:10px" id="save_btn" data-click-action="save-note" data-lid="${lid}">Save Debrief</button>
     `:`<div class="alert alert-info">Select a student to record debrief notes.</div>`}`;
   },
