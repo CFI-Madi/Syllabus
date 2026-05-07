@@ -829,6 +829,37 @@ function handleInputAction(el) {
     case 'calc-wb': calcWB(); break;
     case 'calc-performance': calcPerformance(); break;
     case 'calc-fuel': calcFuel(); break;
+    case 'parse-metar-paste': {
+      const raw = (el.value || '').trim();
+      const out = document.getElementById('metarPasteResult');
+      if (!raw) {
+        window._lastMetarRaw = null;
+        window._lastMetarWind = null;
+        if (out) out.innerHTML = '';
+        if (typeof runGoNoGo === 'function') runGoNoGo();
+        break;
+      }
+      const wind = parseMetarWind(raw);
+      if (wind && wind.dir !== null && wind.speed !== null) {
+        window._lastMetarRaw = raw;
+        window._lastMetarWind = wind;
+        if (out) {
+          const gustStr = wind.gust !== null ? `G${wind.gust}` : '';
+          out.innerHTML = `<span style="color:var(--green)">✓ Parsed:</span> ${wind.dir.toString().padStart(3,'0')}° at ${wind.speed}${gustStr} kt${wind.unit === 'MPS' ? ' (converted from MPS)' : ''}`;
+        }
+        if (typeof runGoNoGo === 'function') runGoNoGo();
+        const syncBtn = document.getElementById('syncXWBtn');
+        if (syncBtn) syncBtn.style.display = '';
+      } else {
+        window._lastMetarRaw = null;
+        window._lastMetarWind = null;
+        if (out) {
+          out.innerHTML = `<span style="color:var(--red)">✗ Could not parse wind from this METAR.</span> Make sure the wind group (e.g., 21008KT) is present.`;
+        }
+        if (typeof runGoNoGo === 'function') runGoNoGo();
+      }
+      break;
+    }
   }
 }
 
@@ -5225,6 +5256,22 @@ Live browser fetch is disabled because Aviation Weather Center blocks cross-orig
       <div id="wxWindChips"
         style="display:none;gap:8px;flex-wrap:wrap;padding:10px 16px;
                background:rgba(0,0,0,.18)"></div>
+    </div>
+
+    <!-- Manual METAR paste — populates Go/No-Go advisor without live fetch -->
+    <div class="card" style="margin-bottom:18px">
+      <div class="card-hd">
+        <div class="card-title">Paste METAR</div>
+      </div>
+      <div style="font-family:var(--ff-mono);font-size:11px;color:var(--text3);margin-bottom:8px">
+        Copy a current KJQF METAR from aviationweather.gov or 1800wxbrief and paste here. The Go/No-Go advisor below uses the parsed wind to evaluate against your personal minimums.
+      </div>
+      <textarea id="metarPasteInput" class="ftextarea"
+        rows="2"
+        placeholder="METAR KJQF 071553Z 21008KT 10SM FEW040 BKN250 22/14 A3001"
+        style="font-family:var(--ff-mono);font-size:13px"
+        data-input-action="parse-metar-paste"></textarea>
+      <div id="metarPasteResult" style="margin-top:8px;font-family:var(--ff-mono);font-size:11px"></div>
     </div>
 
     <!-- Standard briefing -->
