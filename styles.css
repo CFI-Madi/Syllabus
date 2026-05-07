@@ -225,6 +225,134 @@ body.sidebar-collapsed .nav-group > .nav-group-items { display: none !important;
   margin-bottom: 8px;
 }
 
+/* ── TASK CARDS ── */
+.task-cards-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+@media (max-width: 768px) {
+  .task-cards-grid { grid-template-columns: 1fr; }
+}
+
+.task-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 14px 12px;
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  transition: border-color .15s, box-shadow .15s;
+  position: relative;
+  overflow: hidden;
+}
+.task-card:hover { box-shadow: var(--shadow-md); }
+.task-card--signed_off  { border-color: var(--green); }
+.task-card--needs_review { border-color: var(--red); }
+.task-card--proficient  { border-color: var(--olive-light); }
+.task-card--practiced   { border-color: var(--earth-tan); }
+.task-card--introduced  { border-color: var(--border2); }
+
+.task-card-num {
+  width: 30px;
+  height: 30px;
+  min-width: 30px;
+  border-radius: 50%;
+  background: var(--olive);
+  color: #fff;
+  font-family: var(--ff-display);
+  font-size: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.task-card--signed_off .task-card-num  { background: var(--green); }
+.task-card--needs_review .task-card-num { background: var(--red); }
+
+.task-card-body { flex: 1; min-width: 0; }
+
+.task-card-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1.4;
+  margin-bottom: 4px;
+}
+
+.task-card-acs {
+  font-family: var(--ff-mono);
+  font-size: 10px;
+  color: var(--olive-light);
+  margin-bottom: 6px;
+}
+
+.task-card-refs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-bottom: 8px;
+}
+
+.task-card-subtasks {
+  background: var(--bg3);
+  border-radius: 6px;
+  padding: 8px 10px;
+  margin-bottom: 8px;
+}
+.task-card-subtask-hd {
+  font-family: var(--ff-mono);
+  font-size: 9px;
+  color: var(--text3);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 6px;
+}
+
+.task-card-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+
+.task-grade-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+.task-grade-lbl {
+  font-family: var(--ff-mono);
+  font-size: 9px;
+  color: var(--text3);
+  text-transform: uppercase;
+  letter-spacing: .8px;
+  width: 24px;
+  flex-shrink: 0;
+}
+
+.task-card-prog {
+  font-family: var(--ff-mono);
+  font-size: 10px;
+  color: var(--text3);
+  background: var(--bg3);
+  padding: 1px 6px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+/* Dark theme task cards */
+body.dark-theme .task-card { background: var(--bg2); }
+body.dark-theme .task-card-subtasks { background: var(--bg3); }
+
 /* ── GAUGE STAT (instrument-style dashboard) ── */
 .gauge-stat{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:16px 12px;box-shadow:var(--shadow);display:flex;flex-direction:column;align-items:center;gap:6px;transition:box-shadow .18s}
 .gauge-stat:hover{box-shadow:var(--shadow-md)}

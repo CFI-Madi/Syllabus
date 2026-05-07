@@ -3525,8 +3525,8 @@ const V={
     return`
     ${!hasS?`<div class="alert alert-info">Select a student to track task status and grades.</div>`:''}
     ${lesson.scenario?`<div class="scenario-box"><div class="scenario-label">FITS Scenario Context</div><div class="scenario-text">${lesson.scenario}</div></div>`:''}
-    <div style="display:flex;flex-direction:column;gap:8px">
-    ${lesson.tasks.map(task=>{
+    <div class="task-cards-grid">
+    ${lesson.tasks.map((task,idx)=>{
       const ts=getTStatus(s,lid,task.id);
       const sg=getSGrade(s,lid,task.id);
       const ig=getIGrade(s,lid,task.id);
@@ -3534,69 +3534,77 @@ const V={
       const subTotal=task.subtasks?.length||0;
       const subDone=task.subtasks?.filter((_,i)=>checks[i]).length||0;
       const expanded=expandedTasks[lid+'_'+task.id];
-      // Parse first ACS code for link
       const acsCode=task.acsRef?.split(',')[0]?.trim()||'';
       const acsPage=ACS_PAGES[acsCode]||1;
       const acsHref=`${ACS_URL}#page=${acsPage}`;
-      // Parse text ref for link
       const textRef=task.textRef||'';
       const phakMatch=textRef.match(/PHAK\s+(Ch\.\d+)/);
       const afhMatch=textRef.match(/AFH\s+(Ch\.\d+)/);
       const aimMatch=textRef.match(/AIM/);
       return`
-      <div style="background:var(--bg2);border:1px solid ${ts==='signed_off'?'var(--green)':ts==='needs_review'?'var(--red)':ts!=='not_started'?'var(--amber)':'var(--border)'};border-radius:var(--r);overflow:hidden">
-        <!-- Task Header Row -->
-        <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;cursor:pointer" data-click-action="toggle-task" data-lid="${lid}" data-tid="${task.id}">
-          <span id="ticon_${lid}_${task.id}" style="font-size:12px;color:var(--text3);flex-shrink:0">${expanded?'-':'+'}</span>
-          <div style="flex:1;min-width:0">
-            <div style="font-size:13px;font-weight:500;color:var(--text)">${task.text}</div>
-            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:3px;align-items:center">
-              ${acsCode?`<a href="${acsHref}" target="_blank" class="acs-tag" data-stop-prop="true" title="Open ACS ${acsCode}">ACS ${acsCode}</a>`:''}
-              ${phakMatch?`<a href="${REF_URLS.PHAK}" target="_blank" class="task-ref" style="text-decoration:none;color:var(--blue)" data-stop-prop="true">PHAK Chapter ${phakMatch[1].replace('Ch.','')}</a>`:''}
-              ${afhMatch?`<a href="${REF_URLS.AFH}" target="_blank" class="task-ref" style="text-decoration:none;color:var(--blue)" data-stop-prop="true">AFH Chapter ${afhMatch[1].replace('Ch.','')}</a>`:''}
-              ${aimMatch?`<a href="${REF_URLS.AIM}" target="_blank" class="task-ref" style="text-decoration:none;color:var(--blue)" data-stop-prop="true">AIM</a>`:''}
-              ${textRef&&!phakMatch&&!afhMatch&&!aimMatch?`<span class="task-ref">${textRef}</span>`:''}
-            </div>
+      <div class="task-card task-card--${ts}">
+        <div class="task-card-num">${idx+1}</div>
+        <div class="task-card-body">
+          <!-- Title row — clickable to expand subtasks -->
+          <div style="cursor:pointer;display:flex;align-items:flex-start;justify-content:space-between;gap:6px"
+               data-click-action="toggle-task" data-lid="${lid}" data-tid="${task.id}">
+            <div class="task-card-title">${task.text}</div>
+            <span id="ticon_${lid}_${task.id}" style="font-size:11px;color:var(--text3);flex-shrink:0;margin-top:2px">${expanded?'▴':'▾'}</span>
           </div>
-          <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
-            ${subTotal>0?`<span id="tprog_${lid}_${task.id}" style="font-family:var(--ff-mono);font-size:11px;color:var(--text3);background:var(--bg3);padding:2px 7px;border-radius:8px;border:1px solid var(--border)">${subDone}/${subTotal}</span>`:''}
-            <span id="tsbadge_${lid}_${task.id}" class="sbadge s-${ts}">${{not_started:'Not Started',introduced:'Introduced',practiced:'Practiced',proficient:'Proficient',needs_review:'Needs Review',signed_off:'Signed Off'}[ts]}</span>
-          </div>
-        </div>
-        <!-- Expanded Content -->
-        <div id="subtasks_${lid}_${task.id}" style="display:${expanded?'block':'none'};border-top:1px solid var(--border);background:var(--bg3)">
-          ${task.subtasks&&task.subtasks.length>0?`
-          <div style="padding:10px 14px">
-            <div style="font-family:var(--ff-mono);font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Checklist Items ${subDone===subTotal&&subTotal>0?'<span style="color:var(--green)">All Complete</span>':''}</div>
-            ${task.subtasks.map((sub,i)=>{
-              const checked=checks[i]||false;
-              return`<label style="display:flex;align-items:flex-start;gap:10px;padding:6px 0;cursor:${hasS?'pointer':'default'};border-bottom:1px solid var(--border);font-size:13px;color:${checked?'var(--text3)':'var(--text2)'}">
-                <input type="checkbox" ${checked?'checked':''} ${!hasS?'disabled':''} id="stcb_${lid}_${task.id}_${i}" data-change-action="set-subtask" data-lid="${lid}" data-tid="${task.id}" data-idx="${i}" style="margin-top:2px;flex-shrink:0;accent-color:var(--green);width:15px;height:15px">
-                <span style="${checked?'text-decoration:line-through':''}">${sub}</span>
-              </label>`;
-            }).join('')}
-          </div>`:'<div style="padding:10px 14px;font-size:12px;color:var(--text3);font-style:italic">No subtasks defined for this item.</div>'}
-          ${hasS?`
-          <div style="padding:10px 14px;border-top:1px solid var(--border);background:var(--bg2)">
-            <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+          <!-- ACS ref -->
+          ${acsCode?`<div class="task-card-acs">
+            <a href="${acsHref}" target="_blank" data-stop-prop="true" style="color:var(--olive-light);text-decoration:none">ACS ${acsCode}</a>
+            ${subTotal>0?`<span id="tprog_${lid}_${task.id}" class="task-card-prog">${subDone}/${subTotal}</span>`:''}
+          </div>`:''}
+          <!-- Text refs -->
+          ${(phakMatch||afhMatch||aimMatch||(textRef&&!phakMatch&&!afhMatch&&!aimMatch))?`
+          <div class="task-card-refs">
+            ${phakMatch?`<a href="${REF_URLS.PHAK}" target="_blank" class="task-ref" style="text-decoration:none;color:var(--blue)" data-stop-prop="true">PHAK Ch.${phakMatch[1].replace('Ch.','')}</a>`:''}
+            ${afhMatch?`<a href="${REF_URLS.AFH}" target="_blank" class="task-ref" style="text-decoration:none;color:var(--blue)" data-stop-prop="true">AFH Ch.${afhMatch[1].replace('Ch.','')}</a>`:''}
+            ${aimMatch?`<a href="${REF_URLS.AIM}" target="_blank" class="task-ref" style="text-decoration:none;color:var(--blue)" data-stop-prop="true">AIM</a>`:''}
+            ${textRef&&!phakMatch&&!afhMatch&&!aimMatch?`<span class="task-ref">${textRef}</span>`:''}
+          </div>`:''}
+          <!-- Subtask panel (expanded) -->
+          <div id="subtasks_${lid}_${task.id}" style="display:${expanded?'block':'none'}">
+            ${task.subtasks&&task.subtasks.length>0?`
+            <div class="task-card-subtasks">
+              <div class="task-card-subtask-hd">Checklist ${subDone===subTotal&&subTotal>0?'<span style="color:var(--green)">✓ Complete</span>':subDone+'/'+subTotal}</div>
+              ${task.subtasks.map((sub,i)=>{
+                const checked=checks[i]||false;
+                return`<label style="display:flex;align-items:flex-start;gap:8px;padding:5px 0;cursor:${hasS?'pointer':'default'};border-bottom:1px solid var(--border);font-size:12px;color:${checked?'var(--text3)':'var(--text2)'}">
+                  <input type="checkbox" ${checked?'checked':''} ${!hasS?'disabled':''} id="stcb_${lid}_${task.id}_${i}" data-change-action="set-subtask" data-lid="${lid}" data-tid="${task.id}" data-idx="${i}" style="margin-top:2px;flex-shrink:0;accent-color:var(--olive);width:14px;height:14px">
+                  <span style="${checked?'text-decoration:line-through':''}">${sub}</span>
+                </label>`;
+              }).join('')}
+            </div>`:''}
+            <!-- Controls: status select + grades -->
+            ${hasS?`
+            <div class="task-card-controls">
               <div>
-          <select class="fselect s-${ts}" data-change-action="set-task-status" data-lid="${lid}" data-tid="${task.id}" style="font-size:12px;padding:4px 8px;width:auto">
+                <select class="fselect s-${ts}" data-change-action="set-task-status" data-lid="${lid}" data-tid="${task.id}" style="font-size:12px;padding:4px 8px;width:100%">
                   ${[{v:'not_started',l:'Not Started'},{v:'introduced',l:'Introduced'},{v:'practiced',l:'Practiced'},{v:'proficient',l:'Proficient'},{v:'needs_review',l:'Needs Review'},{v:'signed_off',l:'Signed Off'}].map(x=>`<option value="${x.v}"${ts===x.v?' selected':''}>${x.l}</option>`).join('')}
                 </select>
               </div>
-              ${isFL?`<div style="display:flex;align-items:center;gap:5px">
-                <span class="grade-lbl">Student:</span><span id="sg_${lid}_${task.id}">${H.gradeButtons(lid,task.id,'student',sg)}</span>
+              ${isFL?`
+              <div class="task-grade-row">
+                <span class="task-grade-lbl">Stu</span>
+                <span id="sg_${lid}_${task.id}">${H.gradeButtons(lid,task.id,'student',sg)}</span>
               </div>
-              <div style="display:flex;align-items:center;gap:5px">
-                <span class="grade-lbl">CFI:</span><span id="ig_${lid}_${task.id}">${H.gradeButtons(lid,task.id,'instructor',ig)}</span>
+              <div class="task-grade-row">
+                <span class="task-grade-lbl">CFI</span>
+                <span id="ig_${lid}_${task.id}">${H.gradeButtons(lid,task.id,'instructor',ig)}</span>
               </div>`:''}
-            </div>
-          </div>`:''}
+            </div>`:''}
+          </div>
+          <!-- Status badge (always visible) -->
+          <div style="margin-top:6px">
+            <span id="tsbadge_${lid}_${task.id}" class="sbadge s-${ts}">${{not_started:'Not Started',introduced:'Introduced',practiced:'Practiced',proficient:'Proficient',needs_review:'Review',signed_off:'✓ Signed Off'}[ts]||ts}</span>
+          </div>
         </div>
       </div>`;
     }).join('')}
     </div>
-    ${hasS&&isFL?`<div class="alert alert-info" style="margin-top:12px">S = Student self-grade first, then I = Instructor grade · U/M/S/G/E (FITS Learner-Centered Grading). Checking all subtasks auto-signs off the task.</div>`:''}`;
+    ${hasS&&isFL?`<div class="alert alert-info" style="margin-top:4px">Stu = Student self-grade · CFI = Instructor grade · U/M/S/G/E (FITS grading). All subtasks checked → task auto-signs off.</div>`:''}`;
   },
 
   tabScenario(lid,s){
