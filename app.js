@@ -3242,9 +3242,25 @@ const App={
   // â”€â”€ v3: Endorsement Helper â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   copyEndorsement(reqId){
     const s=getS();if(!s)return;
+
+    // Guard: require a cert number before generating a printable endorsement.
+    // Empty -> hard block, navigate to Settings.
+    // Non-numeric or out-of-range -> soft confirm so an unusual but valid
+    // format can still go through if the CFI insists.
+    const certNum = (cfiProfile.certNum || '').trim();
+    if (!certNum) {
+      alert('CFI certificate number is required before generating an endorsement.\n\nGo to Settings and enter your cert number.');
+      this.nav('settings');
+      return;
+    }
+    if (!/^\d{6,10}$/.test(certNum)) {
+      const proceed = confirm(`Certificate number "${certNum}" doesn't look like a standard FAA cert number (6–10 digits).\n\nProceed anyway?`);
+      if (!proceed) { this.nav('settings'); return; }
+    }
+
     const ENDORSEMENTS={
-      solo:      `I certify that ${s.name} has received the training required by § 61.87 and is proficient to conduct solo flight. Limitations: solo at KJQF, VFR day only.\n\n${cfiProfile.name||'[CFI Name]'} | Cert #${cfiProfile.certNum||'XXXXXXXXX'} | Exp ${cfiProfile.certExpiry||'__________'}\nDate: ${new Date().toLocaleDateString()}`,
-      xc_solo:   `I certify that ${s.name} has received the training required by § 61.93 and is competent to conduct supervised solo cross-country flights in a single-engine airplane.\n\n${cfiProfile.name||'[CFI Name]'} | Cert #${cfiProfile.certNum||'XXXXXXXXX'} | Exp ${cfiProfile.certExpiry||'__________'}\nDate: ${new Date().toLocaleDateString()}`,
+      solo:      `I certify that ${s.name} has received the training required by § 61.87 and is proficient to conduct solo flight. Limitations: solo at KJQF, VFR day only.\n\n${cfiProfile.name||'[CFI Name]'} | Cert #${certNum} | Exp ${cfiProfile.certExpiry||'__________'}\nDate: ${new Date().toLocaleDateString()}`,
+      xc_solo:   `I certify that ${s.name} has received the training required by § 61.93 and is competent to conduct supervised solo cross-country flights in a single-engine airplane.\n\n${cfiProfile.name||'[CFI Name]'} | Cert #${certNum} | Exp ${cfiProfile.certExpiry||'__________'}\nDate: ${new Date().toLocaleDateString()}`,
     };
     const text=ENDORSEMENTS[reqId];if(!text)return;
     const btn=document.getElementById('ebtn_'+reqId);
@@ -5284,7 +5300,23 @@ Live browser fetch is disabled because Aviation Weather Center blocks cross-orig
         <div class="card-hd"><div class="card-title">Certificate Information</div></div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
           <div class="fg" style="margin:0"><label>CFI Full Name</label><input class="finput" id="cfi_name" value="${cfiProfile.name||''}" placeholder="First Last"></div>
-          <div class="fg" style="margin:0"><label>Certificate Number</label><input class="finput" id="cfi_certnum" value="${cfiProfile.certNum||''}" placeholder="xxxxxxxxx"></div>
+          ${(()=>{
+            const cert = (cfiProfile.certNum||'').trim();
+            const certOk = cert && /^\d{6,10}$/.test(cert);
+            const certWarn = cert && !certOk;
+            return `
+            <div class="fg" style="margin:0">
+              <label style="display:flex;align-items:center;gap:6px">
+                Certificate Number
+                ${!cert ? '<span style="font-family:var(--ff-mono);font-size:9px;color:var(--red);background:#fef2f2;border:1px solid #fecaca;border-radius:3px;padding:1px 5px">REQUIRED FOR ENDORSEMENTS</span>' : ''}
+                ${certWarn ? '<span style="font-family:var(--ff-mono);font-size:9px;color:var(--orange);background:#fffbeb;border:1px solid #fde68a;border-radius:3px;padding:1px 5px">CHECK FORMAT</span>' : ''}
+                ${certOk ? '<span style="font-family:var(--ff-mono);font-size:9px;color:var(--green);background:#f0fdf4;border:1px solid #86efac;border-radius:3px;padding:1px 5px">OK</span>' : ''}
+              </label>
+              <input class="finput" id="cfi_certnum" value="${cert}" placeholder="e.g. 12345678">
+              ${!cert ? '<div style="font-family:var(--ff-mono);font-size:10px;color:var(--red);margin-top:3px">Required — endorsements cannot be generated without this.</div>' : ''}
+              ${certWarn ? '<div style="font-family:var(--ff-mono);font-size:10px;color:var(--orange);margin-top:3px">Expected 6–10 digits (numbers only). Check your FAA certificate.</div>' : ''}
+            </div>`;
+          })()}
           <div class="fg" style="margin:0">
             <label>Ratings Held</label>
             <input class="finput" id="cfi_ratings" value="${cfiProfile.ratings||'CFI-A'}" placeholder="CFI-A, CFII, MEI">
