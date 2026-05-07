@@ -64,6 +64,203 @@ function afhChapterUrl(syllabusN) {
   return `${AFH_BASE}/${_pad2(n + 1)}_afh_ch${n}.pdf`;
 }
 
+// PA-28-140 Cherokee V-speeds (POH Section I, converted to knots)
+const PA28_VSPEEDS = [
+  { code:'Vs0', label:'Stall (flaps down)',   value:'45 kt', mph:'52 mph', color:'var(--red)' },
+  { code:'Vs1', label:'Stall (flaps up)',     value:'47 kt', mph:'54 mph', color:'var(--red)' },
+  { code:'Vx',  label:'Best angle of climb',  value:'64 kt', mph:'74 mph', color:'var(--blue)' },
+  { code:'Vy',  label:'Best rate of climb',   value:'74 kt', mph:'85 mph', color:'var(--blue)' },
+  { code:'Vg',  label:'Best glide',           value:'72 kt', mph:'83 mph', color:'var(--olive)' },
+  { code:'Vfe', label:'Max flaps extended',   value:'100 kt',mph:'115 mph',color:'var(--amber)' },
+  { code:'Va',  label:'Maneuvering speed',    value:'96 kt', mph:'111 mph',color:'var(--amber)' },
+  { code:'Vno', label:'Max structural cruise',value:'130 kt',mph:'150 mph',color:'var(--orange)' },
+  { code:'Vne', label:'Never exceed',         value:'148 kt',mph:'171 mph',color:'var(--red)' },
+];
+
+// PA-28-140 POH Interactive Checklists (Section III)
+const POH_CHECKLISTS = [
+  { id:'preflight', phase:'Pre-Flight', title:'Preflight Inspection', color:'var(--olive)',
+    items:[
+      'Master switch — ON',
+      'Fuel quantity indicators — CHECK both tanks',
+      'Master switch — OFF, Ignition — OFF',
+      'Walk-around: check for external damage and operational interference',
+      'Control surfaces — free, correct movement, no frost or ice',
+      'Fuel tanks — visually check quantity, secure caps, no leaks',
+      'Fuel sumps (both wings + gascolator) — drain, check for water/sediment',
+      'Oil level — 8 qt max, 6 qt minimum for flight',
+      'Propeller and spinner — no nicks, cracks, or damage',
+      'Tow bar — remove and store in baggage compartment',
+      'Landing gear struts — check inflation (main 3.25 in, nose 4.50 in exposed)',
+      'All inspection covers — secured',
+      'Windshield — clean, no damage',
+      'Baggage — stowed, secured, door locked',
+      'Required papers (ARROW) — on board',
+      'Seat belts and shoulder harnesses — present and serviceable',
+    ]},
+  { id:'engine-start', phase:'Engine Start', title:'Starting Engine', color:'var(--blue)',
+    items:[
+      'Seat — adjusted and locked',
+      'Seat belts and shoulder harness — fasten',
+      'Fuel selector — fullest tank',
+      'Mixture — RICH (full forward)',
+      'Throttle — open 1/4 inch',
+      'Carburetor heat — OFF',
+      'Electric fuel pump — ON',
+      'Prime — 1–3 strokes (cold weather: 3 full strokes)',
+      'Primer — LOCK after use',
+      'Propeller area — CLEAR, announce "CLEAR PROP"',
+      'Master switch — ON',
+      'Ignition switch — BOTH',
+      'Throttle — advance to start, then reduce to 800 RPM',
+      'Oil pressure — CHECK, rising within 30 seconds',
+      'Electric fuel pump — OFF (after pressure confirmed)',
+      'Engine instruments — check in green',
+    ]},
+  { id:'warmup', phase:'Engine Start', title:'Warm-Up', color:'var(--blue)',
+    items:[
+      'RPM — hold 800–1200 RPM until oil temp begins rising',
+      'Oil temperature and pressure — in green before runup',
+      'Carburetor heat — ON briefly if icing conditions suspected',
+      'Throttle — may advance to cruise RPM once oil temp in range',
+    ]},
+  { id:'runup', phase:'Run-Up', title:'Ground Check (Run-Up)', color:'var(--earth-tan)',
+    items:[
+      'Parking brake — SET',
+      'Flight controls — free and correct',
+      'Mixture — RICH',
+      'Carburetor heat — ON (note RPM drop), then OFF',
+      'Throttle — advance to 2000 RPM',
+      'Magneto check — Left (note drop), Both; Right (note drop), Both. Max drop 125 RPM, max differential 50 RPM',
+      'Vacuum gauge — 4.5–5.5 in Hg',
+      'Engine instruments — all in green',
+      'Throttle — reduce to idle, check smooth operation',
+      'Transponder — ALT',
+      'Radios — set, ATIS obtained',
+      'Altimeter — set to field elevation',
+    ]},
+  { id:'takeoff-normal', phase:'Takeoff', title:'Normal Takeoff', color:'var(--olive)',
+    items:[
+      'Flaps — UP (0°)',
+      'Mixture — RICH',
+      'Carburetor heat — OFF',
+      'Fuel selector — fullest tank',
+      'Electric fuel pump — ON',
+      'Trim — set neutral',
+      'Door — latched and locked',
+      'Seat belts — fastened',
+      'Throttle — FULL (smoothly)',
+      'Directional control — right rudder as needed',
+      'Rotate at 55 kt — establish positive climb attitude',
+      'Climb at 75 kt (Vy)',
+      'Electric fuel pump — OFF after positive climb established',
+    ]},
+  { id:'takeoff-short', phase:'Takeoff', title:'Short-Field Takeoff', color:'var(--olive)',
+    items:[
+      'Flaps — 25°',
+      'Taxi to very beginning of runway',
+      'Brakes — SET, apply full power, check engine gauges',
+      'Release brakes',
+      'Rotate at computed speed (55 kt × √(current wt ÷ 2150))',
+      'Climb at Vx (64 kt) to clear obstacle',
+      'At 50 ft AGL — lower nose slightly, do not chase ASI needle',
+      'At 66 kt — retract flaps gradually (confirm positive climb first)',
+      'Continue climb at 75 kt (Vy)',
+    ]},
+  { id:'takeoff-soft', phase:'Takeoff', title:'Soft-Field Takeoff', color:'var(--olive)',
+    items:[
+      'Flaps — 25°',
+      'Elevator — full back pressure while taxiing onto runway',
+      'Throttle — FULL (continuous rolling entry, no stop)',
+      'Release back pressure gradually as speed increases — let airplane fly off',
+      'Remain in ground effect — do not climb steeply out of it',
+      'At 66 kt (Vx) — establish climb attitude',
+      'Positive climb confirmed — retract flaps to 10°',
+      'At 75 kt (Vy) — retract flaps fully',
+    ]},
+  { id:'cruise', phase:'Cruise', title:'Cruise Checklist', color:'var(--text3)',
+    items:[
+      'Cruise altitude — level off and accelerate',
+      'Throttle — set cruise power (75% ≈ 2450 RPM)',
+      'Mixture — lean for altitude (best power or economy)',
+      'Trim — adjust for level flight',
+      'Fuel selector — switch tanks every hour',
+      'Engine instruments — monitor oil temp, oil pressure, fuel',
+      'Carburetor heat — ON if carb ice suspected',
+    ]},
+  { id:'approach-normal', phase:'Landing', title:'Normal Approach and Landing', color:'var(--red)',
+    items:[
+      'Mixture — RICH',
+      'Fuel selector — fullest tank',
+      'Electric fuel pump — ON',
+      'Carburetor heat — ON before power reduction',
+      'Abeam numbers — throttle 1500 RPM',
+      'Flaps — 10° at 85 kt',
+      'Turn base — flaps 25°, descend at 70 kt',
+      'Turn final — flaps 40°, slow to 65 kt',
+      'Toes — off brakes (on lower part of pedals)',
+      'Throttle — to idle in flare',
+      'Flare — smooth, hold off, main wheels touch first',
+      'Lower nosewheel — gently after mains settle',
+    ]},
+  { id:'approach-short', phase:'Landing', title:'Short-Field Landing', color:'var(--red)',
+    items:[
+      'Set up normal approach',
+      'Select aiming point (+200/-0 ft for PPL, +100/-0 ft for CPL)',
+      'Full flap (40°)',
+      'Maintain 59 kt on final (at least last 1/4 mile)',
+      'Toes — off brakes',
+      'Reduce power at threshold — flare, touch on aiming point',
+      'Do not lower nose to hit the point — go around if overshooting',
+      'After touchdown — retract flaps, apply brakes firmly',
+    ]},
+  { id:'approach-soft', phase:'Landing', title:'Soft-Field Landing', color:'var(--red)',
+    items:[
+      'Normal approach (65 kt on final, full flap)',
+      'Toes — off brakes',
+      'Just before touchdown — add 100–200 RPM',
+      'Hold airplane off as long as possible',
+      'After touchdown — hold back pressure to keep nose off',
+      'Reduce power to idle after nose settles',
+    ]},
+  { id:'after-landing', phase:'After Landing', title:'After Landing and Securing', color:'var(--text3)',
+    items:[
+      'Flaps — UP',
+      'Carburetor heat — OFF',
+      'Electric fuel pump — OFF',
+      'Transponder — STBY',
+      'Taxi at slow walking pace on ramp',
+      'Park parallel to centerline — use tow bar, do not push on tail',
+      'Mixture — IDLE CUT-OFF to stop engine',
+      'Ignition — OFF after engine stops',
+      'Master switch — OFF',
+      'Control lock — install',
+      'Tow bar — store in baggage compartment',
+      'Tie-downs — secure all three points',
+      'Pitot cover — install if available',
+      'Hobbs — log time (use higher number if between marks)',
+      'Squawk sheet — note any discrepancies',
+    ]},
+  { id:'poh-engine-failure', phase:'Emergency', title:'Engine Failure in Flight', color:'var(--red)',
+    items:[
+      'Best glide speed — 72 kt (83 mph), TRIM',
+      'Select landing spot — turn toward it immediately',
+      'Fuel selector — switch to fullest tank',
+      'Mixture — RICH',
+      'Carburetor heat — ON',
+      'Ignition — BOTH',
+      'Primer — locked',
+      'Electric fuel pump — ON',
+      'Throttle — try advancing',
+      'If no restart — DECLARE EMERGENCY: Transponder 7700, Radio 121.5 or current ATC',
+      'Mixture — IDLE CUT-OFF (before landing)',
+      'Fuel selector — OFF',
+      'Ignition — OFF',
+      'Master switch — OFF (after using flaps)',
+      'Door — unlatch before touchdown',
+    ]},
+];
+
 const STORE     = 'charlotteaviation_v1'; // â† bump version here on schema changes
 const CFI_STORE = 'charlotteaviation_cfi';
 const DARK_STORE     = 'charlotteaviation_darkmode';
@@ -404,6 +601,43 @@ function handleClickAction(el, event) {
     case 'open-lesson': App.openLesson(el.dataset.lid); break;
     case 'open-procedure': App.openProcedure(el.dataset.pid); break;
     case 'open-poh-ref': App.openPohRef(el.dataset.rid); break;
+    case 'set-aircraft-section':
+      curProcedureSection = el.dataset.section;
+      App.render();
+      break;
+    case 'reset-poh-checklist':
+      if (!window._pohChecks) window._pohChecks = {};
+      delete window._pohChecks[el.dataset.id];
+      App.render();
+      break;
+    case 'toggle-poh-item': {
+      if (!window._pohChecks) window._pohChecks = {};
+      const _cid = el.dataset.id;
+      const _idx = parseInt(el.dataset.idx, 10);
+      if (!window._pohChecks[_cid]) window._pohChecks[_cid] = {};
+      window._pohChecks[_cid][_idx] = !window._pohChecks[_cid][_idx];
+      const _checked = window._pohChecks[_cid][_idx];
+      const _box = document.getElementById(`pohbox_${_cid}_${_idx}`);
+      const _lbl = document.getElementById(`pohitem_${_cid}_${_idx}`);
+      if (_box) {
+        _box.style.background = _checked ? 'var(--green)' : 'var(--bg2)';
+        _box.style.borderColor = _checked ? 'var(--green)' : 'var(--border2)';
+        _box.innerHTML = _checked ? '<span style="color:#fff;font-size:14px;pointer-events:none">✓</span>' : '';
+      }
+      if (_lbl) {
+        _lbl.style.textDecoration = _checked ? 'line-through' : '';
+        _lbl.style.color = _checked ? 'var(--text3)' : 'var(--text)';
+      }
+      const _checks = window._pohChecks[_cid] || {};
+      const _total = (POH_CHECKLISTS.find(c => c.id === _cid) || { items: [] }).items.length;
+      const _done = Object.values(_checks).filter(Boolean).length;
+      const _counter = document.getElementById(`pohcount_${_cid}`);
+      if (_counter) _counter.textContent = `${_done}/${_total}`;
+      const _allDone = _done === _total;
+      const _hd = document.getElementById(`pohhd_${_cid}`);
+      if (_hd) _hd.style.borderColor = _allDone ? 'var(--green)' : '';
+      break;
+    }
     case 'set-procedure-category': App.setProcedureCategory(el.dataset.category); break;
     case 'set-poh-category': App.setPohCategory(el.dataset.category); break;
     case 'set-homework-view': App.setHomeworkView(el.dataset.homeworkView); break;
@@ -2053,11 +2287,11 @@ function lessonTypeLabel(lesson) {
 
 
 // â”€â”€â”€ APP â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-let curView='dashboard',curLesson=null,curTab='tasks',curHomeworkView='print',expandedTasks={},curPhase='presolo',curProcedureCategory='all',curProcedureSearch='',curProcedureId=null,curPohCategory='all',curPohSearch='',curPohId=null,appMode='instructor';
+let curView='dashboard',curLesson=null,curTab='tasks',curHomeworkView='print',expandedTasks={},curPhase='presolo',curProcedureCategory='all',curProcedureSearch='',curProcedureId=null,curProcedureSection='checklists',curPohCategory='all',curPohSearch='',curPohId=null,appMode='instructor';
 let curToolsTab='xwind';
 let curPresoloTest=null;
 let isApplyingRoute = false;
-const VIEWS={dashboard:'DASHBOARD',students:'STUDENTS',lessons:'LESSONS',requirements:'SEC. 61.109 REQUIREMENTS',reports:'REPORTS',settings:'SETTINGS',tools:'PILOT TOOLS',presolo:'PRE-SOLO KNOWLEDGE TEST',lesson:'LESSON',proficiency:'ACS PROFICIENCY HEATMAP',procedures:'AIRCRAFT PROCEDURES',poh:'POH REFERENCE'};
+const VIEWS={dashboard:'DASHBOARD',students:'STUDENTS',lessons:'LESSONS',requirements:'SEC. 61.109 REQUIREMENTS',reports:'REPORTS',settings:'SETTINGS',tools:'PILOT TOOLS',presolo:'PRE-SOLO KNOWLEDGE TEST',lesson:'LESSON',proficiency:'ACS PROFICIENCY HEATMAP',procedures:'AIRCRAFT',poh:'AIRCRAFT'};
 const VALID_LESSON_TABS = new Set(['tasks','objectives','scenario','instructor','srm','debrief','homework','stagecheck','plan','fly']);
 const VALID_PHASES = new Set(PHASES.map(p => p.id));
 const STUDENT_ALLOWED_VIEWS = new Set(['dashboard','lessons','lesson','procedures','poh','tools']);
@@ -2216,6 +2450,13 @@ const App={
   nav(v,lid=null,options={}){
     closeMobileNav();
     curView=studentSafeView(v);
+    // POH was merged into the Aircraft tab. Any nav('poh') should land
+    // on the Systems section of procedures so the URL, topnav highlight,
+    // and rendered content all stay in sync.
+    if(curView === 'poh'){
+      curView = 'procedures';
+      curProcedureSection = 'systems';
+    }
     if(lid){
       curLesson=lid;
       if(!options.preserveTab) curTab=isStudentMode()?'homework':'fly';
@@ -2303,7 +2544,11 @@ const App={
       case 'presolo':      try{el.innerHTML=V.presolo(s);}catch(e){console.error('presolo render error',e);el.innerHTML=`<div class="alert alert-danger">Render error: ${e.message}</div>`;}break;
       case 'proficiency':  el.innerHTML=V.proficiency(s);break;
       case 'procedures':   el.innerHTML=V.procedures(s);break;
-      case 'poh':          el.innerHTML=V.poh(s);break;
+      case 'poh': // merged into Aircraft tab — redirect to Systems section
+        curView = 'procedures';
+        curProcedureSection = 'systems';
+        el.innerHTML = V.procedures(s);
+        break;
     }
   },
   renderStuSel(){
@@ -3289,104 +3534,249 @@ const V={
     return header+workflowSummary+rows;
   },
 
-  procedures(s){
-    const filtered = H.filteredProcedures();
-    const selected = filtered.find(item => item.id === curProcedureId) || filtered[0] || AIRCRAFT_PROCEDURES[0] || null;
-    const searchValue = curProcedureSearch.replace(/&/g,'&amp;').replace(/"/g,'&quot;');
-    if(selected && curProcedureId !== selected.id) curProcedureId = selected.id;
-    const procedureList = filtered.length
-      ? filtered.map(item => {
-          const lessonLinks = H.procedureLessonLinks(item);
-          return `<button class="procedure-list-card${selected?.id===item.id?' active':''}" data-click-action="open-procedure" data-pid="${item.id}">
-            <div class="procedure-list-head">
-              <span class="context-chip">${PROCEDURE_CATEGORIES.find(cat => cat.id===item.category)?.label || item.category}</span>
-              <span class="procedure-source">p. ${item.sourcePage}</span>
-            </div>
-            <div class="procedure-list-title">${item.title}</div>
-            <div class="procedure-list-summary">${item.summary}</div>
-            ${lessonLinks.length?`<div class="procedure-list-lessons">${lessonLinks.slice(0,3).map(lesson=>`<span class="context-chip">${lesson.id}</span>`).join('')}</div>`:''}
-          </button>`;
-        }).join('')
-      : H.emptyState('', 'NO PROCEDURES MATCH', 'Try a different search term or clear the category filter.');
-    const detailSection = selected
-      ? (() => {
-          const lessonLinks = H.procedureLessonLinks(selected);
-          const pohLinks = H.relatedPohRefsForProcedure(selected.id);
-          const section = (label, items, kind='list') => {
-            if(!items || !items.length) return '';
-            let content;
-            if(kind==='checklist'){
-              content=`<ol class="proc-checklist">${items.map(item=>`<li>${item}</li>`).join('')}</ol>`;
-            } else if(kind==='callout'){
-              content=`<div class="proc-notes">${items.map(item=>`<div class="proc-note proc-note--callout"><span class="proc-note-icon">&#9873;</span><span>${item}</span></div>`).join('')}</div>`;
-            } else if(kind==='warning'){
-              content=`<div class="proc-notes">${items.map(item=>`<div class="proc-note proc-note--warning"><span class="proc-note-icon">&#9888;</span><span>${item}</span></div>`).join('')}</div>`;
-            } else {
-              content=`<ol class="proc-steps">${items.map(item=>`<li class="proc-step">${item}</li>`).join('')}</ol>`;
-            }
-            return `<div class="procedure-section">
-              <div class="proc-section-label">${label}</div>
-              ${content}
-            </div>`;
-          };
-          return `<div class="procedure-detail-card">
-            <div class="procedure-detail-head">
-              <div>
-                <div class="procedure-detail-kicker">${selected.aircraft}</div>
-                <div class="procedure-detail-title">${selected.title}</div>
-                <div class="procedure-detail-summary">${selected.summary}</div>
-              </div>
-              <div class="procedure-detail-actions">
-                ${H.procedureSourceMarkup(selected)}
-              </div>
-            </div>
-            <span class="section-lbl" style="font-style:italic">Ref: ${selected.sourceLabel||''} p.${selected.sourcePage||''} · Use with applicable POH/AFM</span>
-            ${selected.targetSpeeds?.length?`<div class="procedure-speed-grid">${selected.targetSpeeds.map(item=>`<div class="procedure-speed-chip">${item}</div>`).join('')}</div>`:''}
-            ${section('Checklist', selected.checklist, 'checklist')}
-            ${section('Setup', selected.setup)}
-            ${section('Entry', selected.entry)}
-            ${section('Execution', selected.execution)}
-            ${section('Recovery', selected.recovery)}
-            ${section('Callouts and Notes', selected.callouts, 'callout')}
-            ${section('Warnings', selected.warnings, 'warning')}
-            ${pohLinks.length?`<div class="card poh-inline-card">
-              ${H.renderPohSupport('POH Support', pohLinks.slice(0,3), 'No handbook reference is linked to this procedure yet.')}
-            </div>`:''}
-            <div class="procedure-detail-footer">
-              <div class="procedure-traceability">Source: ${selected.sourceLabel}, page ${selected.sourcePage}</div>
-              ${lessonLinks.length?`<div class="procedure-related-lessons">${lessonLinks.map(lesson=>`<button class="btn btn-ghost btn-sm" data-click-action="open-lesson" data-lid="${lesson.id}">${lesson.id} ${lesson.title}</button>`).join('')}</div>`:'<div class="report-empty">No direct lesson links are tracked for this procedure yet.</div>'}
-            </div>
-          </div>`;
-        })()
-      : H.emptyState('', 'NO PROCEDURE SELECTED', 'Select a procedure to view the quick-reference detail.');
+  procedures(s) {
+    const section = curProcedureSection || 'checklists';
+    const SECTIONS = [
+      { id:'reference',  label:'◈ Quick Reference' },
+      { id:'checklists', label:'☑ Checklists' },
+      { id:'procedures', label:'≡ Procedures' },
+      { id:'systems',    label:'⊞ Systems' },
+    ];
     return `
-    <div class="context-banner">
-      <div class="context-banner-head">
-        <div>
-          <div class="context-banner-title">AIRCRAFT PROCEDURES</div>
-          <div class="context-banner-text">${AIRCRAFT_TAG} quick-reference library for school and instructor procedure guidance. This view keeps the PDF content structured, searchable, and linked to relevant lessons.</div>
-          <div class="context-banner-meta">
-            <span class="context-chip">${AIRCRAFT_TAG}</span>
-            <span class="context-chip">${AIRCRAFT_PROCEDURES.length} procedures digitized</span>
-            <span class="context-chip">${PROCEDURES_SOURCE_LABEL}</span>
-            ${s?`<span class="context-chip">${s.name.toUpperCase()} selected</span>`:'<span class="context-chip">Works without an active student</span>'}
-          </div>
-        </div>
-        <div class="context-banner-actions">
-          <a class="btn btn-ghost btn-sm" href="${procedureSourceHref(1)}" target="_blank" rel="noopener noreferrer">Open Source PDF</a>
-          <button class="btn btn-ghost btn-sm" data-click-action="nav-lessons">Lessons</button>
+    <div class="proc-page">
+      <div class="page-hd" style="margin-bottom:0">
+        <div class="page-hd-main">
+          <div class="page-hd-eyebrow">PA-28-140 CHEROKEE · CHARLOTTE AVIATION</div>
+          <div class="page-hd-title">AIRCRAFT</div>
         </div>
       </div>
-    </div>
-    <div class="proc-cat-tabs">
-      ${PROCEDURE_CATEGORIES.map(cat=>`<button class="proc-cat-tab${curProcedureCategory===cat.id?' active':''}" data-click-action="set-procedure-category" data-category="${cat.id}">${cat.label}</button>`).join('')}
-    </div>
-    <div class="procedure-toolbar">
-      <input class="finput procedure-search" placeholder="Search procedures, callouts, or lesson IDs" value="${searchValue}" data-input-action="filter-procedures">
-    </div>
-    <div class="procedure-layout">
-      <div class="procedure-list-column">${procedureList}</div>
-      <div class="procedure-detail-column">${detailSection}</div>
+      <div class="proc-section-tabs">
+        ${SECTIONS.map(sec => `
+          <button class="proc-section-tab${section===sec.id?' active':''}"
+                  data-click-action="set-aircraft-section"
+                  data-section="${sec.id}">${sec.label}</button>
+        `).join('')}
+      </div>
+      <div class="proc-section-content">
+        ${section === 'reference'  ? this.aircraftReference()  : ''}
+        ${section === 'checklists' ? this.aircraftChecklists() : ''}
+        ${section === 'procedures' ? this.aircraftProcedures() : ''}
+        ${section === 'systems'    ? this.aircraftSystems()    : ''}
+      </div>
+    </div>`;
+  },
+
+  aircraftReference() {
+    return `
+    <div>
+      <div class="section-lbl" style="margin-bottom:12px">Airspeed Reference — PA-28-140</div>
+      <div class="vspeed-grid">
+        ${PA28_VSPEEDS.map(v => `
+        <div class="vspeed-card">
+          <div class="vspeed-code" style="color:${v.color}">${v.code}</div>
+          <div class="vspeed-value">${v.value}</div>
+          <div class="vspeed-mph">${v.mph}</div>
+          <div class="vspeed-label">${v.label}</div>
+        </div>`).join('')}
+      </div>
+
+      <div class="section-lbl" style="margin-top:24px;margin-bottom:12px">Key Specifications — POH Section I</div>
+      <div class="proc-spec-grid">
+        ${[
+          ['Max Gross Weight','2,150 lbs'],['Empty Weight (std)','1,201 lbs'],
+          ['Useful Load (std)','949 lbs'],['Fuel (std / opt)','36 / 50 gal'],
+          ['Oil Capacity','8 qts'],['Engine','Lycoming O-320-E2A'],
+          ['Rated HP','150 HP @ 2700 RPM'],['Fuel Grade','80/87 min (100LL)'],
+          ['Max Baggage','200 lbs'],['Service Ceiling','14,300 ft'],
+          ['Rate of Climb (SL)','660 fpm'],['Best Glide Ratio','~9:1 @ 83 mph'],
+        ].map(([lbl,val]) => `
+        <div class="proc-spec-card">
+          <div class="proc-spec-lbl">${lbl}</div>
+          <div class="proc-spec-val">${val}</div>
+        </div>`).join('')}
+      </div>
+      <div style="font-family:var(--ff-mono);font-size:10px;color:var(--text3);margin-top:16px;font-style:italic">
+        Source: PA-28-140 Owner's Handbook · Section I. For reference only — verify against the aircraft's current approved documents.
+      </div>
+    </div>`;
+  },
+
+  aircraftChecklists() {
+    if (!window._pohChecks) window._pohChecks = {};
+    const phases = [...new Set(POH_CHECKLISTS.map(c => c.phase))];
+    return `
+    <div>
+      <div style="font-family:var(--ff-mono);font-size:11px;color:var(--text3);margin-bottom:16px">
+        Tap any item to check it off. Tap Reset to clear a checklist. State clears when you close the app.
+      </div>
+      ${phases.map(phase => {
+        const lists = POH_CHECKLISTS.filter(c => c.phase === phase);
+        return `
+        <div class="section-lbl" style="margin-top:20px;margin-bottom:10px">${phase}</div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          ${lists.map(cl => {
+            const checks = window._pohChecks[cl.id] || {};
+            const done = cl.items.filter((_, i) => checks[i]).length;
+            const total = cl.items.length;
+            const allDone = done === total;
+            return `
+            <div class="poh-checklist-card" id="pohhd_${cl.id}" style="border-color:${allDone ? 'var(--green)' : cl.color}">
+              <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border)">
+                <div>
+                  <div style="font-family:var(--ff-display);font-size:18px;letter-spacing:1px;color:${allDone ? 'var(--green)' : cl.color}">
+                    ${allDone ? '✓ ' : ''}${cl.title}
+                  </div>
+                  <div id="pohcount_${cl.id}" style="font-family:var(--ff-mono);font-size:11px;color:var(--text3);margin-top:2px">${done}/${total}</div>
+                </div>
+                <button class="btn btn-ghost btn-sm" data-click-action="reset-poh-checklist" data-id="${cl.id}">Reset</button>
+              </div>
+              ${cl.items.map((item, i) => {
+                const checked = !!checks[i];
+                return `
+                <div style="display:flex;align-items:center;gap:14px;padding:10px 16px;border-bottom:1px solid var(--border);cursor:pointer;min-height:52px"
+                     data-click-action="toggle-poh-item" data-id="${cl.id}" data-idx="${i}">
+                  <div id="pohbox_${cl.id}_${i}"
+                       style="width:26px;height:26px;min-width:26px;border-radius:5px;border:2px solid ${checked ? 'var(--green)' : 'var(--border2)'};background:${checked ? 'var(--green)' : 'var(--bg2)'};display:flex;align-items:center;justify-content:center;flex-shrink:0;pointer-events:none">
+                    ${checked ? '<span style="color:#fff;font-size:14px;pointer-events:none">✓</span>' : ''}
+                  </div>
+                  <span id="pohitem_${cl.id}_${i}"
+                        style="font-size:14px;line-height:1.4;color:${checked ? 'var(--text3)' : 'var(--text)'};${checked ? 'text-decoration:line-through' : ''};pointer-events:none">${item}</span>
+                </div>`;
+              }).join('')}
+            </div>`;
+          }).join('')}
+        </div>`;
+      }).join('')}
+      <div style="font-family:var(--ff-mono);font-size:10px;color:var(--text3);margin-top:20px;font-style:italic">
+        Source: PA-28-140 Owner's Handbook · Section III. For training reference — always use the aircraft's approved checklist.
+      </div>
+    </div>`;
+  },
+
+  aircraftProcedures() {
+    const GROUPS = [
+      { id:'checks',    label:'Pre-Maneuver',             icon:'☑' },
+      { id:'maneuvers', label:'Basic Maneuvers',           icon:'◎' },
+      { id:'pattern',   label:'Traffic Pattern & Fields',  icon:'⬡' },
+      { id:'emergency', label:'Emergency',                 icon:'⚠' },
+      { id:'ground',    label:'Ramp & Ground Ops',         icon:'⊞' },
+    ];
+    const selected = curProcedureId
+      ? AIRCRAFT_PROCEDURES.find(p => p.id === curProcedureId)
+      : AIRCRAFT_PROCEDURES[0] || null;
+    if (selected && curProcedureId !== selected.id) curProcedureId = selected.id;
+
+    return `
+    <div class="proc-maneuver-layout">
+      <div class="proc-maneuver-list">
+        ${GROUPS.map(group => {
+          const procs = AIRCRAFT_PROCEDURES.filter(p => p.category === group.id);
+          if (!procs.length) return '';
+          return `
+          <div class="section-lbl" style="margin-bottom:6px">${group.icon} ${group.label}</div>
+          <div style="display:flex;flex-direction:column;gap:4px;margin-bottom:16px">
+            ${procs.map(p => `
+            <div class="proc-list-item${curProcedureId === p.id ? ' proc-list-item--active' : ''}"
+                 data-click-action="open-procedure" data-pid="${p.id}">${p.title}</div>
+            `).join('')}
+          </div>`;
+        }).join('')}
+      </div>
+      <div class="proc-maneuver-detail">
+        ${selected ? `
+          <div style="font-family:var(--ff-display);font-size:22px;letter-spacing:1px;color:var(--text);margin-bottom:4px">${selected.title}</div>
+          <div style="font-family:var(--ff-mono);font-size:11px;color:var(--text3);margin-bottom:16px">${selected.summary || ''}</div>
+          ${selected.checklist?.length ? `
+            <div class="section-lbl">Checklist</div>
+            <div style="display:flex;flex-direction:column;gap:4px;margin-bottom:16px">
+              ${selected.checklist.map((item, i) => `
+              <div style="display:flex;gap:10px;padding:8px 12px;background:var(--bg3);border-radius:6px;font-size:13px;border:1px solid var(--border)">
+                <span style="font-family:var(--ff-mono);color:var(--text3);flex-shrink:0">${i + 1}.</span>
+                <span>${item}</span>
+              </div>`).join('')}
+            </div>` : ''}
+          ${selected.execution?.length ? `
+            <div class="section-lbl">Execution Notes</div>
+            <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:16px">
+              ${selected.execution.map(e => `
+              <div style="padding:8px 12px;background:var(--bg2);border-left:3px solid var(--olive);border-radius:0 6px 6px 0;font-size:13px;line-height:1.6">${e}</div>
+              `).join('')}
+            </div>` : ''}
+          ${selected.callouts?.length ? `
+            <div class="section-lbl">CFI Callouts</div>
+            <div style="display:flex;flex-direction:column;gap:4px;margin-bottom:16px">
+              ${selected.callouts.map(c => `
+              <div style="padding:8px 12px;background:var(--olive-dim);border:1px solid var(--olive);border-radius:6px;font-size:13px;color:var(--olive2)">${c}</div>
+              `).join('')}
+            </div>` : ''}
+          ${selected.warnings?.length ? `
+            <div class="section-lbl">Warnings</div>
+            <div style="display:flex;flex-direction:column;gap:4px;margin-bottom:16px">
+              ${selected.warnings.map(w => `
+              <div style="padding:8px 12px;background:var(--red-dim);border:1px solid var(--red);border-radius:6px;font-size:13px;color:var(--red)">${w}</div>
+              `).join('')}
+            </div>` : ''}
+          <div style="font-family:var(--ff-mono);font-size:10px;color:var(--text3);font-style:italic">
+            Source: ${selected.sourceLabel} p.${selected.sourcePage}
+          </div>
+        ` : '<div style="color:var(--text3);font-size:14px;text-align:center;padding:40px 0">← Select a procedure</div>'}
+      </div>
+    </div>`;
+  },
+
+  aircraftSystems() {
+    const selected = curPohId
+      ? POH_REFERENCES.find(r => r.id === curPohId)
+      : POH_REFERENCES[0] || null;
+    if (selected && curPohId !== selected.id) curPohId = selected.id;
+
+    const SYSTEM_GROUPS = [
+      { id:'systems',     label:'Systems',            icon:'⚙' },
+      { id:'performance', label:'Performance',         icon:'◎' },
+      { id:'wb',          label:'Weight & Balance',    icon:'⊞' },
+    ];
+
+    return `
+    <div class="proc-maneuver-layout">
+      <div class="proc-maneuver-list">
+        ${SYSTEM_GROUPS.map(group => {
+          const refs = POH_REFERENCES.filter(r => r.category === group.id);
+          if (!refs.length) return '';
+          return `
+          <div class="section-lbl" style="margin-bottom:6px">${group.icon} ${group.label}</div>
+          <div style="display:flex;flex-direction:column;gap:4px;margin-bottom:16px">
+            ${refs.map(r => `
+            <div class="proc-list-item${curPohId === r.id ? ' proc-list-item--active' : ''}"
+                 data-click-action="open-poh-ref" data-rid="${r.id}">${r.title}</div>
+            `).join('')}
+          </div>`;
+        }).join('')}
+      </div>
+      <div class="proc-maneuver-detail">
+        ${selected ? `
+          <div style="font-family:var(--ff-display);font-size:22px;letter-spacing:1px;color:var(--text);margin-bottom:4px">${selected.title}</div>
+          <div style="font-family:var(--ff-mono);font-size:11px;color:var(--text3);margin-bottom:4px">${selected.sourceSection || ''}</div>
+          <div style="font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:16px">${selected.summary}</div>
+          ${selected.keyPoints?.length ? `
+            <div class="section-lbl">Key Points</div>
+            <div style="display:flex;flex-direction:column;gap:4px;margin-bottom:16px">
+              ${selected.keyPoints.map(pt => `
+              <div style="display:flex;gap:10px;padding:8px 12px;background:var(--bg3);border-radius:6px;font-size:13px;border:1px solid var(--border)">
+                <span style="color:var(--olive);flex-shrink:0">·</span><span>${pt}</span>
+              </div>`).join('')}
+            </div>` : ''}
+          ${selected.limitations?.length ? `
+            <div class="section-lbl">Use Notes</div>
+            <div style="display:flex;flex-direction:column;gap:4px;margin-bottom:16px">
+              ${selected.limitations.map(l => `
+              <div style="padding:8px 12px;background:var(--amber-dim);border:1px solid var(--amber);border-radius:6px;font-size:13px;color:var(--text2)">${l}</div>
+              `).join('')}
+            </div>` : ''}
+          <div style="display:flex;gap:8px;margin-top:8px">
+            <a class="btn btn-ghost btn-sm" href="${pohSourceHref(selected.sourcePage)}" target="_blank">Open in POH PDF ↗</a>
+          </div>
+        ` : '<div style="color:var(--text3);font-size:14px;text-align:center;padding:40px 0">← Select a reference</div>'}
+      </div>
     </div>`;
   },
 
