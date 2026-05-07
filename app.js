@@ -6662,7 +6662,7 @@ function xwCalc(){
         +'<div class="xw-box-label">Crosswind</div>'
         +'<div class="xw-box-val">'+xwAbs.toFixed(1)+' kt</div>'
         +(gXW?'<div class="xw-box-gust">gust '+gXW.toFixed(1)+' kt</div>':'')
-        +'<div class="xw-box-dir">'+(xw>=0?'from left':'from right')+'</div>'
+        +'<div class="xw-box-dir">'+(xw>=0?'from right':'from left')+'</div>'
       +'</div>'
       +'<div class="xw-box">'
         +'<div class="xw-box-label">'+(hw>=0?'Headwind':'Tailwind')+'</div>'
