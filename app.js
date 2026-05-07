@@ -606,17 +606,15 @@ function handleClickAction(el, event) {
       App.render();
       break;
     case 'reset-poh-checklist':
-      if (!window._pohChecks) window._pohChecks = {};
-      delete window._pohChecks[el.dataset.id];
+      delete pohCheckState[el.dataset.id];
       App.render();
       break;
     case 'toggle-poh-item': {
-      if (!window._pohChecks) window._pohChecks = {};
       const _cid = el.dataset.id;
       const _idx = parseInt(el.dataset.idx, 10);
-      if (!window._pohChecks[_cid]) window._pohChecks[_cid] = {};
-      window._pohChecks[_cid][_idx] = !window._pohChecks[_cid][_idx];
-      const _checked = window._pohChecks[_cid][_idx];
+      if (!pohCheckState[_cid]) pohCheckState[_cid] = {};
+      pohCheckState[_cid][_idx] = !pohCheckState[_cid][_idx];
+      const _checked = pohCheckState[_cid][_idx];
       const _box = document.getElementById(`pohbox_${_cid}_${_idx}`);
       const _lbl = document.getElementById(`pohitem_${_cid}_${_idx}`);
       if (_box) {
@@ -628,7 +626,7 @@ function handleClickAction(el, event) {
         _lbl.style.textDecoration = _checked ? 'line-through' : '';
         _lbl.style.color = _checked ? 'var(--text3)' : 'var(--text)';
       }
-      const _checks = window._pohChecks[_cid] || {};
+      const _checks = pohCheckState[_cid] || {};
       const _total = (POH_CHECKLISTS.find(c => c.id === _cid) || { items: [] }).items.length;
       const _done = Object.values(_checks).filter(Boolean).length;
       const _counter = document.getElementById(`pohcount_${_cid}`);
@@ -2289,6 +2287,7 @@ function lessonTypeLabel(lesson) {
 // â”€â”€â”€ APP â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 let curView='dashboard',curLesson=null,curTab='tasks',curHomeworkView='print',expandedTasks={},curPhase='presolo',curProcedureCategory='all',curProcedureSearch='',curProcedureId=null,curProcedureSection='checklists',curPohCategory='all',curPohSearch='',curPohId=null,appMode='instructor';
 let curToolsTab='xwind';
+let pohCheckState = {}; // transient Aircraft → Checklists state (cleared on reload)
 let curPresoloTest=null;
 let isApplyingRoute = false;
 const VIEWS={dashboard:'DASHBOARD',students:'STUDENTS',lessons:'LESSONS',requirements:'SEC. 61.109 REQUIREMENTS',reports:'REPORTS',settings:'SETTINGS',tools:'PILOT TOOLS',presolo:'PRE-SOLO KNOWLEDGE TEST',lesson:'LESSON',proficiency:'ACS PROFICIENCY HEATMAP',procedures:'AIRCRAFT',poh:'AIRCRAFT'};
@@ -3607,7 +3606,6 @@ const V={
   },
 
   aircraftChecklists() {
-    if (!window._pohChecks) window._pohChecks = {};
     const phases = [...new Set(POH_CHECKLISTS.map(c => c.phase))];
     return `
     <div>
@@ -3620,7 +3618,7 @@ const V={
         <div class="section-lbl" style="margin-top:20px;margin-bottom:10px">${phase}</div>
         <div style="display:flex;flex-direction:column;gap:10px">
           ${lists.map(cl => {
-            const checks = window._pohChecks[cl.id] || {};
+            const checks = pohCheckState[cl.id] || {};
             const done = cl.items.filter((_, i) => checks[i]).length;
             const total = cl.items.length;
             const allDone = done === total;
