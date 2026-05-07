@@ -2393,12 +2393,18 @@ function applyRouteFromUrl() {
   curPhase = route.phase;
   curTab = route.tab;
 
+  let viewWasRemapped = false;
   if(route.view === 'lesson' && route.lessonId){
     App.nav('lesson', route.lessonId, { updateRoute:false, preserveTab:true });
   } else {
     App.nav(route.view, null, { updateRoute:false });
+    viewWasRemapped = (route.view !== curView);
   }
   isApplyingRoute = false;
+  // Clean up any redirected URLs (e.g. ?view=poh → ?view=procedures).
+  // syncRoute is gated on isApplyingRoute, so it must run after the flag
+  // is cleared. replaceState (true) — no extra history entry.
+  if (viewWasRemapped) syncRoute(true);
 }
 
 function bindRouting() {
