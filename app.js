@@ -6853,7 +6853,7 @@ function xwCalc(){
         +'<div class="xw-gauge-fill'+(warn?' warn':'')+'" style="width:'+pct+'%"></div>'
         +(gPct?'<div class="xw-gauge-gust" style="width:'+gPct+'%"></div>':'')
       +'</div>'
-      +'<div style="font-family:var(--ff-mono);font-size:10px;color:var(--text3);margin-top:4px">Typical trainer max demonstrated crosswind: 15 kt</div>'
+      +'<div style="font-family:var(--ff-mono);font-size:10px;color:var(--text3);margin-top:4px">PA-28-140 max demonstrated crosswind: 17 kt (POH)</div>'
     +'</div>'
     +(warn||gustWarn?'<div class="alert alert-danger" style="margin-top:8px"><span>&#9888;</span><div>Crosswind exceeds 15 kt - verify against POH maximum demonstrated crosswind for this aircraft.</div></div>':'');
 }
