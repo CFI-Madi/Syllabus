@@ -580,7 +580,8 @@ const H={
   },
   /** v3: touch-friendly grade buttons with aria labels */
   gradeButtons(lid,tid,who,current){
-    const colors={U:'var(--red)',M:'var(--orange)',S:'var(--amber)',G:'var(--blue)',E:'var(--green)'};
+    const colors={U:'var(--red)',M:'var(--orange)',S:'var(--earth-tan)',G:'var(--olive)',E:'var(--green)'};
+    const textColors={U:'#fff',M:'#fff',S:'#1a2744',G:'#fff',E:'#fff'};
     const labels={U:'Unsatisfactory',M:'Marginal',S:'Satisfactory',G:'Good',E:'Excellent'};
     return ['U','M','S','G','E'].map(g=>`<button
       class="grade-btn ${current===g?'active-'+g:''}"
@@ -590,7 +591,7 @@ const H={
       data-grade="${g}"
       title="${labels[g]}"
       aria-label="${labels[g]}"
-      style="${current===g?'border-color:'+colors[g]+';background:'+colors[g]+';color:#fff':''}"
+      style="${current===g?'border-color:'+colors[g]+';background:'+colors[g]+';color:'+textColors[g]:''}"
     >${g}</button>`).join('');
   },
   glProgress(s){
@@ -2416,7 +2417,7 @@ const App={
     const el=document.getElementById('subtasks_'+lid+'_'+tid);
     const icon=document.getElementById('ticon_'+lid+'_'+tid);
     if(el){el.style.display=expandedTasks[key]?'block':'none';}
-    if(icon){icon.textContent=expandedTasks[key]?'-':'+';}
+    if(icon){icon.textContent=expandedTasks[key]?'▴':'▾';}
   },
   setSubtask(lid,tid,idx,checked){
     const s=getS();if(!s)return;
